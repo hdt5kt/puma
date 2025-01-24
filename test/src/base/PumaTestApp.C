@@ -6,45 +6,45 @@
 //*
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
-#include "pumaTestApp.h"
-#include "pumaApp.h"
+#include "PumaTestApp.h"
+#include "PumaApp.h"
 #include "Moose.h"
 #include "AppFactory.h"
 #include "MooseSyntax.h"
 
 InputParameters
-pumaTestApp::validParams()
+PumaTestApp::validParams()
 {
-  InputParameters params = pumaApp::validParams();
+  InputParameters params = PumaApp::validParams();
   params.set<bool>("use_legacy_material_output") = false;
   params.set<bool>("use_legacy_initial_residual_evaluation_behavior") = false;
   return params;
 }
 
-pumaTestApp::pumaTestApp(InputParameters parameters) : MooseApp(parameters)
+PumaTestApp::PumaTestApp(InputParameters parameters) : MooseApp(parameters)
 {
-  pumaTestApp::registerAll(
+  PumaTestApp::registerAll(
       _factory, _action_factory, _syntax, getParam<bool>("allow_test_objects"));
 }
 
-pumaTestApp::~pumaTestApp() {}
+PumaTestApp::~PumaTestApp() {}
 
 void
-pumaTestApp::registerAll(Factory & f, ActionFactory & af, Syntax & s, bool use_test_objs)
+PumaTestApp::registerAll(Factory & f, ActionFactory & af, Syntax & s, bool use_test_objs)
 {
-  pumaApp::registerAll(f, af, s);
+  PumaApp::registerAll(f, af, s);
   if (use_test_objs)
   {
-    Registry::registerObjectsTo(f, {"pumaTestApp"});
-    Registry::registerActionsTo(af, {"pumaTestApp"});
+    Registry::registerObjectsTo(f, {"PumaTestApp"});
+    Registry::registerActionsTo(af, {"PumaTestApp"});
   }
 }
 
 void
-pumaTestApp::registerApps()
+PumaTestApp::registerApps()
 {
-  registerApp(pumaApp);
-  registerApp(pumaTestApp);
+  registerApp(PumaApp);
+  registerApp(PumaTestApp);
 }
 
 /***************************************************************************************************
@@ -52,12 +52,12 @@ pumaTestApp::registerApps()
  **************************************************************************************************/
 // External entry point for dynamic application loading
 extern "C" void
-pumaTestApp__registerAll(Factory & f, ActionFactory & af, Syntax & s)
+PumaTestApp__registerAll(Factory & f, ActionFactory & af, Syntax & s)
 {
-  pumaTestApp::registerAll(f, af, s);
+  PumaTestApp::registerAll(f, af, s);
 }
 extern "C" void
-pumaTestApp__registerApps()
+PumaTestApp__registerApps()
 {
-  pumaTestApp::registerApps();
+  PumaTestApp::registerApps();
 }

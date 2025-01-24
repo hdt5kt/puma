@@ -1,11 +1,11 @@
-#include "pumaApp.h"
+#include "PumaApp.h"
 #include "Moose.h"
 #include "AppFactory.h"
 #include "ModulesApp.h"
 #include "MooseSyntax.h"
 
 InputParameters
-pumaApp::validParams()
+PumaApp::validParams()
 {
   InputParameters params = MooseApp::validParams();
   params.set<bool>("use_legacy_material_output") = false;
@@ -13,39 +13,39 @@ pumaApp::validParams()
   return params;
 }
 
-pumaApp::pumaApp(InputParameters parameters) : MooseApp(parameters)
+PumaApp::PumaApp(InputParameters parameters) : MooseApp(parameters)
 {
-  pumaApp::registerAll(_factory, _action_factory, _syntax);
+  PumaApp::registerAll(_factory, _action_factory, _syntax);
 }
 
-pumaApp::~pumaApp() {}
+PumaApp::~PumaApp() {}
 
 void
-pumaApp::registerAll(Factory & f, ActionFactory & af, Syntax & syntax)
+PumaApp::registerAll(Factory & f, ActionFactory & af, Syntax & syntax)
 {
-  ModulesApp::registerAllObjects<pumaApp>(f, af, syntax);
-  Registry::registerObjectsTo(f, {"pumaApp"});
-  Registry::registerActionsTo(af, {"pumaApp"});
+  ModulesApp::registerAllObjects<PumaApp>(f, af, syntax);
+  Registry::registerObjectsTo(f, {"PumaApp"});
+  Registry::registerActionsTo(af, {"PumaApp"});
 
   /* register custom execute flags, action syntax, etc. here */
 }
 
 void
-pumaApp::registerApps()
+PumaApp::registerApps()
 {
-  registerApp(pumaApp);
+  registerApp(PumaApp);
 }
 
 /***************************************************************************************************
  *********************** Dynamic Library Entry Points - DO NOT MODIFY ******************************
  **************************************************************************************************/
 extern "C" void
-pumaApp__registerAll(Factory & f, ActionFactory & af, Syntax & s)
+PumaApp__registerAll(Factory & f, ActionFactory & af, Syntax & s)
 {
-  pumaApp::registerAll(f, af, s);
+  PumaApp::registerAll(f, af, s);
 }
 extern "C" void
-pumaApp__registerApps()
+PumaApp__registerApps()
 {
-  pumaApp::registerApps();
+  PumaApp::registerApps();
 }

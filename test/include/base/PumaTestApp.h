@@ -11,13 +11,13 @@
 
 #include "MooseApp.h"
 
-class pumaTestApp : public MooseApp
+class PumaTestApp : public MooseApp
 {
 public:
   static InputParameters validParams();
 
-  pumaTestApp(InputParameters parameters);
-  virtual ~pumaTestApp();
+  PumaTestApp(InputParameters parameters);
+  virtual ~PumaTestApp();
 
   static void registerApps();
   static void registerAll(Factory & f, ActionFactory & af, Syntax & s, bool use_test_objs = false);

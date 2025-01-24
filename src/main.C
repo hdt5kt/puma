@@ -7,12 +7,12 @@
 //* Licensed under LGPL 2.1, please see LICENSE for details
 //* https://www.gnu.org/licenses/lgpl-2.1.html
 
-#include "pumaTestApp.h"
+#include "PumaTestApp.h"
 #include "MooseMain.h"
 
 // Begin the main program.
 int
 main(int argc, char * argv[])
 {
-  return Moose::main<pumaTestApp>(argc, argv);
+  return Moose::main<PumaTestApp>(argc, argv);
 }
