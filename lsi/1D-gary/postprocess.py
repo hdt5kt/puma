@@ -14,7 +14,7 @@ times = summary["time"]
 norm = colors.Normalize(vmin=times.iloc[0], vmax=times.iloc[-1])
 sm = cm.ScalarMappable(norm=norm, cmap="viridis")
 
-qois = ["alpha", "phi_Si", "phi_C", "phi_SiC", "phi_0"]
+qois = ["alpha", "phi_Si", "phi_C", "phi_SiC", "phi_0", "alpha_Si", "alpha_C"]
 
 for qoi in qois:
     fig, ax = plt.subplots(figsize=(8, 5))

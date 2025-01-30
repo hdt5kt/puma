@@ -124,6 +124,26 @@ phi_C0 = 0.3
       execute_on = 'INITIAL TIMESTEP_END'
     []
   []
+  [alpha_Si]
+    order = CONSTANT
+    family = MONOMIAL
+    [AuxKernel]
+      type = ParsedAux
+      expression = 'phi_Si/12+phi_SiC/17.3'
+      material_properties = 'phi_SiC phi_Si'
+      execute_on = 'INITIAL TIMESTEP_END'
+    []
+  []
+  [alpha_C]
+    order = CONSTANT
+    family = MONOMIAL
+    [AuxKernel]
+      type = ParsedAux
+      expression = 'phi_C/5.3+phi_SiC/17.3'
+      material_properties = 'phi_C phi_SiC'
+      execute_on = 'INITIAL TIMESTEP_END'
+    []
+  []
 []
 
 [VectorPostprocessors]
@@ -132,7 +152,7 @@ phi_C0 = 0.3
     start_point = '0 0 0'
     end_point = '${L} 0 0'
     num_points = ${n}
-    variable = 'alpha phi_Si phi_SiC phi_C phi_0'
+    variable = 'alpha phi_Si phi_SiC phi_C phi_0 alpha_Si alpha_C'
     sort_by = 'x'
     execute_on = 'INITIAL TIMESTEP_END'
   []
