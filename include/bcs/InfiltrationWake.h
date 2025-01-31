@@ -30,6 +30,11 @@ protected:
   const MaterialProperty<Real> & _phi_p;
   const MaterialProperty<Real> & _dphi_p;
 
+  /// Sharpness of the heaviside function
+  const Real _sharpness;
+
   /// The suction flux from the wake into the solid
-  const Function & _flux;
+  const Function & _inlet_flux;
+  /// The extraction flux for out flow
+  const Function & _outlet_flux;
 };

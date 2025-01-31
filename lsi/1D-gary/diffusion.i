@@ -1,12 +1,12 @@
 n = 100
 L = 1
-t_end = 3600
+t_end = 7200
 t_ramp = 600
 dt0 = 10
 
 phi_p0 = 0
-phi_s0 = 0.9
-flux = 1e-3
+phi_s0 = 0.6
+flux = 1e-4
 D = 1e-3
 
 [Mesh]
@@ -74,7 +74,7 @@ D = 1e-3
 []
 
 [Functions]
-  [suction_flux]
+  [flux]
     type = PiecewiseLinear
     x = '0 ${t_ramp}'
     y = '0 ${flux}'
@@ -86,7 +86,21 @@ D = 1e-3
     type = InfiltrationWake
     variable = alpha
     boundary = left
-    suction_flux = 'suction_flux'
+    inlet_flux = 'flux'
+    outlet_flux = 'flux'
+    solid_fraction = phi_s
+    solid_fraction_derivative = phi_s_derivative
+    liquid_fraction = phi_l
+    liquid_fraction_derivative = phi_l_derivative
+    product_fraction = phi_p
+    product_fraction_derivative = phi_p_derivative
+  []
+  [right]
+    type = InfiltrationWake
+    variable = alpha
+    boundary = right
+    inlet_flux = '0'
+    outlet_flux = 'flux'
     solid_fraction = phi_s
     solid_fraction_derivative = phi_s_derivative
     liquid_fraction = phi_l

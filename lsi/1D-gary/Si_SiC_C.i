@@ -2,7 +2,6 @@ D = 1e-4
 omega_Si = 12
 omega_C = 5.3
 omega_SiC = 12.5
-omega_r = 0.424 # omega_Si/Omega_SiC
 
 [Solvers]
   [newton]
@@ -53,7 +52,7 @@ omega_r = 0.424 # omega_Si/Omega_SiC
     type = ScalarLinearCombination
     from_var = 'state/alpha_rate'
     to_var = 'state/phi_s_rate'
-    coefficients = '-${omega_Si}'
+    coefficients = '-${omega_C}'
   []
   [integrate_phi_p]
     type = ScalarBackwardEulerTimeIntegration
