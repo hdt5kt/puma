@@ -1,12 +1,13 @@
 n = 100
 L = 1
-t_end = 7200
+t_end = 3600
 t_ramp = 600
-nstep = 200
+dt0 = 10
 
-D = 1e-4
-phi_SiC0 = 0
-phi_C0 = 0.3
+phi_p0 = 0
+phi_s0 = 0.9
+flux = 1e-3
+D = 1e-3
 
 [Mesh]
   type = GeneratedMesh
@@ -30,6 +31,13 @@ phi_C0 = 0.3
     variable = alpha
     diffusivity = D
   []
+  [reaction]
+    type = MaterialSource
+    variable = alpha
+    prop = alpha_rate
+    prop_derivative = alpha_rate_derivative
+    coefficient = 1
+  []
 []
 
 [NEML2]
@@ -41,40 +49,50 @@ phi_C0 = 0.3
     device = 'cpu'
 
     moose_input_types = 'VARIABLE     POSTPROCESSOR POSTPROCESSOR MATERIAL        MATERIAL'
-    moose_inputs = '     alpha        time          time          phi_SiC         phi_C'
+    moose_inputs = '     alpha        time          time          phi_p         phi_s'
     neml2_inputs = '     forces/alpha forces/t      old_forces/t  old_state/phi_p old_state/phi_s'
 
-    moose_output_types = 'MATERIAL    MATERIAL    MATERIAL'
-    moose_outputs = '     phi_SiC     phi_C       phi_Si'
-    neml2_outputs = '     state/phi_p state/phi_s state/phi_l'
+    moose_output_types = 'MATERIAL    MATERIAL    MATERIAL    MATERIAL'
+    moose_outputs = '     phi_p       phi_s       phi_l       alpha_rate'
+    neml2_outputs = '     state/phi_p state/phi_s state/phi_l state/alpha_rate'
 
-    initialize_outputs = '      phi_SiC  phi_C'
-    initialize_output_values = 'phi_SiC0 phi_C0'
+    moose_derivative_types = 'MATERIAL                       MATERIAL                  MATERIAL                  MATERIAL'
+    moose_derivatives = '     alpha_rate_derivative          phi_p_derivative          phi_s_derivative          phi_l_derivative'
+    neml2_derivatives = '     state/alpha_rate forces/alpha; state/phi_p forces/alpha; state/phi_s forces/alpha; state/phi_l forces/alpha'
+
+    initialize_outputs = '      phi_p  phi_s'
+    initialize_output_values = 'phi_p0 phi_s0'
   []
 []
 
 [Materials]
-  [D]
+  [initial_state]
     type = GenericConstantMaterial
-    prop_names = 'D phi_SiC0 phi_C0'
-    prop_values = '${D} ${phi_SiC0} ${phi_C0}'
+    prop_names = 'D phi_p0 phi_s0'
+    prop_values = '${D} ${phi_p0} ${phi_s0}'
   []
 []
 
 [Functions]
-  [alpha_ramp]
+  [suction_flux]
     type = PiecewiseLinear
     x = '0 ${t_ramp}'
-    y = '0 0.05'
+    y = '0 ${flux}'
   []
 []
 
 [BCs]
   [left]
-    type = FunctionDirichletBC
+    type = InfiltrationWake
     variable = alpha
     boundary = left
-    function = 'alpha_ramp'
+    suction_flux = 'suction_flux'
+    solid_fraction = phi_s
+    solid_fraction_derivative = phi_s_derivative
+    liquid_fraction = phi_l
+    liquid_fraction_derivative = phi_l_derivative
+    product_fraction = phi_p
+    product_fraction_derivative = phi_p_derivative
   []
 []
 
@@ -87,30 +105,30 @@ phi_C0 = 0.3
 []
 
 [AuxVariables]
-  [phi_SiC]
+  [phi_p]
     order = CONSTANT
     family = MONOMIAL
     [AuxKernel]
       type = MaterialRealAux
-      property = phi_SiC
+      property = phi_p
       execute_on = 'INITIAL TIMESTEP_END'
     []
   []
-  [phi_Si]
+  [phi_l]
     order = CONSTANT
     family = MONOMIAL
     [AuxKernel]
       type = MaterialRealAux
-      property = phi_Si
+      property = phi_l
       execute_on = 'INITIAL TIMESTEP_END'
     []
   []
-  [phi_C]
+  [phi_s]
     order = CONSTANT
     family = MONOMIAL
     [AuxKernel]
       type = MaterialRealAux
-      property = phi_C
+      property = phi_s
       execute_on = 'INITIAL TIMESTEP_END'
     []
   []
@@ -119,28 +137,8 @@ phi_C0 = 0.3
     family = MONOMIAL
     [AuxKernel]
       type = ParsedAux
-      expression = '1-phi_SiC-phi_C-phi_Si'
-      material_properties = 'phi_SiC phi_C phi_Si'
-      execute_on = 'INITIAL TIMESTEP_END'
-    []
-  []
-  [alpha_Si]
-    order = CONSTANT
-    family = MONOMIAL
-    [AuxKernel]
-      type = ParsedAux
-      expression = 'phi_Si/12+phi_SiC/17.3'
-      material_properties = 'phi_SiC phi_Si'
-      execute_on = 'INITIAL TIMESTEP_END'
-    []
-  []
-  [alpha_C]
-    order = CONSTANT
-    family = MONOMIAL
-    [AuxKernel]
-      type = ParsedAux
-      expression = 'phi_C/5.3+phi_SiC/17.3'
-      material_properties = 'phi_C phi_SiC'
+      expression = '1-phi_p-phi_s-phi_l'
+      material_properties = 'phi_p phi_s phi_l'
       execute_on = 'INITIAL TIMESTEP_END'
     []
   []
@@ -152,7 +150,7 @@ phi_C0 = 0.3
     start_point = '0 0 0'
     end_point = '${L} 0 0'
     num_points = ${n}
-    variable = 'alpha phi_Si phi_SiC phi_C phi_0 alpha_Si alpha_C'
+    variable = 'alpha phi_l phi_p phi_s phi_0'
     sort_by = 'x'
     execute_on = 'INITIAL TIMESTEP_END'
   []
@@ -171,7 +169,18 @@ phi_C0 = 0.3
   nl_max_its = 12
 
   end_time = ${t_end}
-  dt = '${fparse t_end/nstep}'
+  dtmax = '${fparse 10*dt0}'
+
+  [TimeStepper]
+    type = IterationAdaptiveDT
+    dt = ${dt0}
+    optimal_iterations = 6
+    iteration_window = 2
+    cutback_factor = 0.5
+    cutback_factor_at_failure = 0.1
+    growth_factor = 1.2
+    linear_iteration_ratio = 10000
+  []
 []
 
 [Outputs]

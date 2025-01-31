@@ -13,7 +13,7 @@ MaterialSource::validParams()
       "prop", "Name of the material property to provide the multiplier");
   params.addRequiredParam<MaterialPropertyName>(
       "prop_derivative", "Name of the material property derivative to provide the multiplier");
-  params.addParam<Real>("coefficient", 1, "Coefficient to be multiplied to the source");
+  params.addParam<Real>("coefficient", -1, "Coefficient to be multiplied to the source");
   return params;
 }
 

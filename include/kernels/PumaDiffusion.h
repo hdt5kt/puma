@@ -12,14 +12,9 @@ public:
   PumaDiffusion(const InputParameters & parameters);
 
 protected:
-  virtual Real computeQpResidual() override;
-  virtual Real computeQpJacobian() override;
-  virtual Real computeQpOffDiagJacobian(unsigned int jvar) override;
+  Real computeQpResidual() override;
+  Real computeQpJacobian() override;
 
   const MaterialProperty<Real> & _D;
   const MaterialProperty<Real> & _dD;
-  const unsigned int _P_num;
-  const VariableGradient & _Pgrad;
-
-  const Real _coef;
 };

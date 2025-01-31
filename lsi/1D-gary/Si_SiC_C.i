@@ -1,6 +1,8 @@
-D = 1e-5
+D = 1e-4
 omega_Si = 12
 omega_C = 5.3
+omega_SiC = 12.5
+omega_r = 0.424 # omega_Si/Omega_SiC
 
 [Solvers]
   [newton]
@@ -10,9 +12,10 @@ omega_C = 5.3
 
 [Models]
   [liquid_fraction]
-    type = LiquidFraction
-    liquid_molar_volume = ${omega_Si}
-    solid_molar_volume = ${omega_C}
+    type = ScalarLinearCombination
+    from_var = 'forces/alpha'
+    to_var = 'state/phi_l'
+    coefficients = '${omega_Si}'
   []
   [liquid_reactivity]
     type = HermiteSmoothStep
@@ -31,11 +34,26 @@ omega_C = 5.3
   [product_geometry]
     type = ProductGeometry
   []
-  [reaction]
+  [diffusion]
     type = DiffusionLimitedReaction
     diffusion_coefficient = ${D}
-    liquid_molar_volume = ${omega_Si}
-    solid_molar_volume = ${omega_C}
+    molar_volume = ${omega_Si}
+  []
+  [reaction]
+    type = ComposedModel
+    models = 'liquid_reactivity solid_reactivity product_geometry diffusion'
+  []
+  [product_rate]
+    type = ScalarLinearCombination
+    from_var = 'state/alpha_rate'
+    to_var = 'state/phi_p_rate'
+    coefficients = '${omega_SiC}'
+  []
+  [solid_rate]
+    type = ScalarLinearCombination
+    from_var = 'state/alpha_rate'
+    to_var = 'state/phi_s_rate'
+    coefficients = '-${omega_Si}'
   []
   [integrate_phi_p]
     type = ScalarBackwardEulerTimeIntegration
@@ -47,8 +65,8 @@ omega_C = 5.3
   []
   [system]
     type = ComposedModel
-    models = "liquid_fraction liquid_reactivity solid_reactivity
-              product_geometry reaction
+    models = "liquid_fraction reaction
+              product_rate solid_rate
               integrate_phi_p integrate_phi_s"
   []
   [model0]
@@ -58,7 +76,7 @@ omega_C = 5.3
   []
   [model]
     type = ComposedModel
-    models = 'model0 liquid_fraction'
-    additional_outputs = 'state/phi_p'
+    models = 'model0 liquid_fraction reaction'
+    additional_outputs = 'state/phi_p state/phi_s state/phi_l'
   []
 []

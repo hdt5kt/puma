@@ -14,11 +14,11 @@ times = summary["time"]
 norm = colors.Normalize(vmin=times.iloc[0], vmax=times.iloc[-1])
 sm = cm.ScalarMappable(norm=norm, cmap="viridis")
 
-qois = ["alpha", "phi_Si", "phi_C", "phi_SiC", "phi_0", "alpha_Si", "alpha_C"]
+qois = ["alpha", "phi_l", "phi_s", "phi_p", "phi_0"]
 
 for qoi in qois:
     fig, ax = plt.subplots(figsize=(8, 5))
-    for i in range(nstep):
+    for i in range(1, nstep):
         df = pd.read_csv(out_dir / "out_value_{:04d}.csv".format(i))
         ax.plot(df["x"], df[qoi], color=sm.to_rgba(times.iloc[i]))
     fig.colorbar(sm, ax=ax, label="Time [s]")

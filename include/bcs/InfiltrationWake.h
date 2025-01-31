@@ -1,0 +1,35 @@
+// Copyright 2023, UChicago Argonne, LLC All Rights Reserved
+// License: L-GPL 3.0
+
+#pragma once
+
+#include "IntegratedBC.h"
+
+class Function;
+
+class InfiltrationWake : public IntegratedBC
+{
+public:
+  static InputParameters validParams();
+
+  InfiltrationWake(const InputParameters & parameters);
+
+protected:
+  Real computeQpResidual() override;
+  Real computeQpJacobian() override;
+
+  /// Volume fraction of the solid phase (and its derivative w.r.t. the species concentration)
+  const MaterialProperty<Real> & _phi_s;
+  const MaterialProperty<Real> & _dphi_s;
+
+  /// Volume fraction of the liquid phase (and its derivative w.r.t. the species concentration)
+  const MaterialProperty<Real> & _phi_l;
+  const MaterialProperty<Real> & _dphi_l;
+
+  /// Volume fraction of the product phase (and its derivative w.r.t. the species concentration)
+  const MaterialProperty<Real> & _phi_p;
+  const MaterialProperty<Real> & _dphi_p;
+
+  /// The suction flux from the wake into the solid
+  const Function & _flux;
+};
