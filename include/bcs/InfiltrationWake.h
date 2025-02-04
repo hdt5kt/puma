@@ -37,4 +37,8 @@ protected:
   const Function & _inlet_flux;
   /// The extraction flux for out flow
   const Function & _outlet_flux;
+
+  /// The multiplier for the inlet and outlet fluxes
+  const VariableValue * _M;
+  const Real _M0;
 };

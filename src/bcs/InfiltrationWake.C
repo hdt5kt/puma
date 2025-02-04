@@ -32,6 +32,10 @@ InfiltrationWake::validParams()
   params.addRequiredParam<FunctionName>(
       "outlet_flux", "The function describing the extraction flux from the wake into the solid");
 
+  params.addCoupledVar("multiplier", "The multiplier for the inlet and outlet fluxes");
+  params.addParam<Real>(
+      "multiplier_residual", 0.05, "The residual multiplier for when the fluxes are zero");
+
   return params;
 }
 
@@ -45,7 +49,9 @@ InfiltrationWake::InfiltrationWake(const InputParameters & parameters)
     _dphi_p(getMaterialProperty<Real>("product_fraction_derivative")),
     _sharpness(getParam<Real>("sharpness")),
     _inlet_flux(getFunction("inlet_flux")),
-    _outlet_flux(getFunction("outlet_flux"))
+    _outlet_flux(getFunction("outlet_flux")),
+    _M(isCoupled("multiplier") ? &coupledValue("multiplier") : nullptr),
+    _M0(getParam<Real>("multiplier_residual"))
 {
 }
 
@@ -70,7 +76,8 @@ InfiltrationWake::computeQpResidual()
   const auto b = _outlet_flux.value(_t, _q_point[_qp]);
   const auto scale = -heaviside(x - 1, _sharpness) * (a + b) + a;
 
-  return -_test[_i][_qp] * scale;
+  const auto r = -_test[_i][_qp] * scale;
+  return _M ? std::max((*_M)[_qp] - _M0, 0.0) * r : r;
 }
 
 Real
@@ -90,5 +97,6 @@ InfiltrationWake::computeQpJacobian()
                              dscale_dx * dx_dcap * dcap_dphi_s * _dphi_s[_qp] +
                              dscale_dx * dx_dcap * dcap_dphi_p * _dphi_p[_qp];
 
-  return -_test[_i][_qp] * dscale_dalpha * _phi[_j][_qp];
+  const auto J = -_test[_i][_qp] * dscale_dalpha * _phi[_j][_qp];
+  return _M ? std::max((*_M)[_qp] - _M0, 0.0) * J : J;
 }
