@@ -2,13 +2,13 @@ clear
 clc
 close all
 %% Input
-base = 'solution8/out_line_';
+base = 'solution11/out_line_';
 %base = 'Expansion/Argonne/LSI/1D_run1/out_line_';
 skip = 1;
 id = 1:skip:30000;
 
 %plotid = [200, 400, 1200, 2000, 3600]./skip;
-plotid = [1, 20, 100, 300, 408];
+plotid = [1, 20];
 col = {'k','b','r','m',[0.4660 0.6740 0.1880],[0.9290 0.6940 0.1250]};
 
 % variable

@@ -2,13 +2,13 @@
 # parameters
 M = 0.576
 lc = 1e-6 #m
-phi0 = 1.0
+phi0 = 0.5
 
 # Material/system properties
 oP = 1.25e-5 #m^3/mol
 oL = 1.2e-5 #m^3/mol
 rho_rat = 0.8
-D_LP = 1e-18 # m^2/s 5e-7
+D_LP = 1e-19 # m^2/s 5e-7
 sto_coef = 1.0
 smooth = 70
 
@@ -16,14 +16,14 @@ smooth = 70
 
 D_macro = 1e-6
 Dmulti_alphamax = 1000
-t_ramp = 5000 #s
-P0 = 1e-4
+#t_ramp = 5000 #s
+P0 = 1e-5
 
 n = 100
 xmax = 1 #m
 
 d0 = 0.01
-alpha0 = 10
+alpha0 = 20000
 
 #alphamin = 1
 
@@ -210,12 +210,12 @@ aP0 = '${fparse 1/oP*(2*r10*d0^2+d0^4)}'
 []
 
 [BCs]
-    [left1]
-        type = FunctionNeumannBC
-        variable = alpha
-        boundary = left
-        function = 'if(t<${t_ramp},0.5*t/${t_ramp},0.5)'
-    []
+    #[left1]
+    #    type = FunctionNeumannBC
+    #    variable = alpha
+    #    boundary = left
+    #    function = 'if(t<${t_ramp},0.5*t/${t_ramp},0.5)'
+    #[]
     #[left2]
     #    type = DirichletBC
     #    variable = alpha

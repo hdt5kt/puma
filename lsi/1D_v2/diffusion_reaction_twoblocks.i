@@ -16,16 +16,16 @@ smooth = 70
 
 D_macro = 1e-6
 Dmulti_alphamax = 1000
-t_ramp = 5000 #s
+# t_ramp = 5000 #s
 P0 = 1e-5
 
-n = 1000
+n = 100
 xmax = 1 #m
 x3nodes_low = '${fparse 2*xmax/n - 0.0001}'
 x3nodes_high = '${fparse 2*xmax/n + 0.0001}'
 
 d0 = 0.01
-alpha0 = 10
+alpha0 = 10000
 
 #alphamin = 1
 
@@ -268,12 +268,12 @@ aP0 = '${fparse 1/oP*(2*r10*d0^2+d0^4)}'
     #    boundary = left
     #    function = 'if(t<${t_ramp},0.5*t/${t_ramp},0.5)'
     #[]
-    [left2]
-        type = FunctionDirichletBC
-        variable = alpha
-        boundary = left
-        function = 'if(t<${t_ramp},${almax}*t/${t_ramp},${almax})'
-    []
+    #[left2]
+    #    type = FunctionDirichletBC
+    #    variable = alpha
+    #    boundary = left
+    #    function = 'if(t<${t_ramp},${almax}*t/${t_ramp},${almax})'
+    #[]
     #[right1]
     #    type = NeumannBC
     #    variable = alpha
@@ -345,7 +345,7 @@ aP0 = '${fparse 1/oP*(2*r10*d0^2+d0^4)}'
     exodus = true
     [csv]
         type = CSV
-        file_base = 'solution10/out'
+        file_base = 'solution11/out'
     []
     [console]
         type = Console

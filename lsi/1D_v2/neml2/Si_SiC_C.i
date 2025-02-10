@@ -173,24 +173,24 @@
     #    time = 'forces/tt'
     #    rate = 'state/alpha_source'
     #[]
-    [alpha_source]
-        type = ScalarVariableRate
-        variable = 'state/alphaP'
-        time = 'forces/tt'
-        rate = 'state/alpha_source'
-    []
-    #[alphadot_new]
-    #    type = ScalarVariableRate
-    #    variable = 'forces/alpha'
-    #    time = 'forces/tt'
-    #    rate = 'forces/alphadotn'
-    #[]
     #[alpha_source]
-    #    type = ScalarLinearCombination
-    #    coefficients = "-1.0 1.0"
-    #    from_var = 'forces/alphadotn state/aLInDot'
-    #    to_var = 'state/alpha_source'
+    #    type = ScalarVariableRate
+    #    variable = 'state/alphaP'
+    #    time = 'forces/tt'
+    #    rate = 'state/alpha_source'
     #[]
+    [alphadot_new]
+        type = ScalarVariableRate
+        variable = 'forces/alpha'
+        time = 'forces/tt'
+        rate = 'state/alphadot'
+    []
+    [alpha_source]
+        type = ScalarLinearCombination
+        coefficients = "-1.0 1.0"
+        from_var = 'state/alphadot state/aLInDot'
+        to_var = 'state/alpha_source'
+    []
     [alphamax_new]
         type = LiquidSaturationLimitRatio
         liquid_molar_volume = '${oL}'
@@ -232,7 +232,7 @@
     []
     [model]
         type = ComposedModel
-        models = 'model_update inlet_gap_new aSiC_new alpha_source alphamax_new alpha_transition_new diffusion_coef pressure'
+        models = 'model_update inlet_gap_new aSiC_new alpha_source alphamax_new alpha_transition_new diffusion_coef pressure alphadot_new'
         additional_outputs = 'state/delta state/h state/aLInDot state/alphaP state/alphamax'
     []
 []

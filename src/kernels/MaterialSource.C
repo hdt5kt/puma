@@ -34,5 +34,5 @@ MaterialSource::precomputeQpResidual()
 Real
 MaterialSource::precomputeQpJacobian()
 {
-  return _coef * _dprop[_qp];
+  return _coef * _dprop[_qp] * _phi[_j][_qp];
 }
