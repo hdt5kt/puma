@@ -76,7 +76,6 @@ PumaApp::registerAll(Factory & f, ActionFactory & af, Syntax & syntax)
   Registry::registerObjectsTo(f, {"PumaApp"});
   Registry::registerActionsTo(af, {"PumaApp"});
   associateSyntaxInner(syntax, af);
-  registerAppDataFilePath("solid_mechanics");
 
   /* register custom execute flags, action syntax, etc. here */
 }
