@@ -29,33 +29,33 @@ k_g = 1e-4
 k_p = 380 #120 and 490
 
 # reaction type
-Ea = 177820 # J mol-1
-A = 5.24e12 # s-1
+Ea = 41220 # 177820 # J mol-1
+A = 1.24e4 # 5.24e12 # s-1
 R = 8.31446261815324 # JK-1mol-1
 #hrp = 1.58e6 # J kg-1
 
-Y = 0.7
+Y = 0.575
 Ym1 = '${fparse 1/Y}' # 1/Y
 invYm1 = '${fparse 1-1/Y}' # 1-1/Y
 
 order = 1.0
-order_k = 1.0
+order_k = 0.00015
 
 # initial condition
-ms0 = 1.0
+ms0 = 0.0
 mb0 = 10
-mp0 = 13
+mp0 = 0.0
 mg0 = 0.0
 alpha0 = '${fparse 1/(1-Y)}' # 1/(1-Y)
-vv0 = 0.1 #void fraction
+vv0 = 0.0 #void fraction
 Vv0 = '${fparse vv0/(1-vv0)*(ms0/rho_s + mb0/rho_b + mp0/rho_p)}'
 
 V0 = '${fparse ms0/rho_s + mb0/rho_b + mp0/rho_p + Vv0}'
 
 xmax = '${fparse V0/nx}'
 
-T0 = 400 #K
-Tmax = 800 #K
+T0 = 300 #K
+Tmax = 1500 #K
 #Tref = 273 #K
 
 [Mesh]
@@ -96,17 +96,17 @@ Tmax = 800 #K
         neml2_inputs = '     forces/T forces/tt     old_forces/tt old_state/alpha state/mb state/mg state/mp state/ms state/Vv old_state/mb old_state/mg old_state/mp old_state/ms old_state/Vv'
 
         moose_output_types = 'MATERIAL MATERIAL MATERIAL  MATERIAL
-                              MATERIAL MATERIAL MATERIAL  MATERIAL
+                              MATERIAL MATERIAL MATERIAL  MATERIAL   MATERIAL
                               MATERIAL MATERIAL MATERIAL  MATERIAL
                               MATERIAL MATERIAL MATERIAL  MATERIAL
                               MATERIAL MATERIAL MATERIAL  MATERIAL'
         moose_outputs = '     mp       mb       mg        ms
-                              wp       wb       ws        alpha
+                              wp       wb       ws        alpha      alpha_dot
                               vp       vb       vv        vs
                               Vp       Vb       Vv        Vs
                               K        V        rho       cp'
         neml2_outputs = '     state/mp state/mb state/mg  state/ms
-                              state/wp state/wb state/ws  state/alpha
+                              state/wp state/wb state/ws  state/alpha state/alpha_dot
                               state/vp state/vb state/vv  state/vs
                               state/Vp state/Vb state/Vv  state/Vs
                               state/K  state/V  state/rho state/cp'
@@ -136,6 +136,10 @@ Tmax = 800 #K
     [temp]
         type = ElementAverageValue
         variable = T
+    []
+    [alphadot]
+        type = ElementAverageMaterialProperty
+        mat_prop = alpha_dot
     []
     [ms]
         type = ElementAverageMaterialProperty
@@ -257,8 +261,8 @@ Tmax = 800 #K
 [Executioner]
     type = Transient
     solve_type = 'newton'
-    petsc_options_iname = '-pc_type -snes_type'
-    petsc_options_value = 'lu vinewtonrsls'
+    petsc_options_iname = '-pc_type' # -snes_type'
+    petsc_options_value = 'lu' # vinewtonrsls'
     automatic_scaling = true
 
     nl_abs_tol = 1e-8
@@ -283,7 +287,7 @@ Tmax = 800 #K
     console = false
     [csv]
         type = CSV
-        file_base = 'solution1/out'
+        file_base = 'experiment_comp/out'
     []
     print_linear_residuals = false
 []

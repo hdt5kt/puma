@@ -1,11 +1,11 @@
 ############### Input ################
 # Simulation parameters
-dt = 5
-total_time = '${fparse 3600*3.0}'
+dt = 20
+total_time = '${fparse 3600*1.75}'
 nx = 200
 
 # denisty kgm-3
-rho_s = 320
+rho_s = 2260
 rho_b = 1250 # 1.2 and 1.4
 rho_g = 1
 rho_p = 3210
@@ -42,12 +42,12 @@ order = 1.0
 order_k = 1.0
 
 # initial condition #kg
-ms0 = 300
-mb0 = 1200
-mp0 = 3000
+ms0 = 3
+mb0 = 24
+mp0 = 30
 mg0 = 1e-4
 alpha0 = '${fparse 1/(1-Y)}' # 1/(1-Y)
-vv0 = 0.1 #void fraction
+vv0 = 0.0001 #void fraction
 Vv0 = '${fparse vv0/(1-vv0)*(ms0/rho_s + mb0/rho_b + mp0/rho_p)}'
 
 V0 = '${fparse ms0/rho_s + mb0/rho_b + mp0/rho_p + Vv0}'
@@ -56,7 +56,7 @@ xmax = '${fparse V0^(1/3)}'
 #xmax = '${fparse nx*dx}'
 
 T0 = 300 #K
-Tmax = 1200 #K
+Tmax = 1000 #K
 #Tref = 300 #K
 
 dTdt = 10 #Kmin-1 heating rate
@@ -224,6 +224,15 @@ t_ramp = '${fparse (Tmax-T0)/dTdt*60}' #s
             execute_on = 'INITIAL TIMESTEP_END'
         []
     []
+    [V]
+        order = CONSTANT
+        family = MONOMIAL
+        [AuxKernel]
+            type = MaterialRealAux
+            property = V
+            execute_on = 'INITIAL TIMESTEP_END'
+        []
+    []
 []
 
 [VectorPostprocessors]
@@ -233,7 +242,7 @@ t_ramp = '${fparse (Tmax-T0)/dTdt*60}' #s
         num_points = ${nx}
         sort_by = 'x'
         start_point = '0 0 0'
-        variable = 'T wb wp ws vb vp vs vv'
+        variable = 'T wb wp ws vb vp vs vv V'
     []
 []
 
@@ -278,7 +287,7 @@ t_ramp = '${fparse (Tmax-T0)/dTdt*60}' #s
     nl_abs_tol = 1e-8
 
     end_time = ${total_time}
-    dtmax = '${fparse 100*dt}'
+    dtmax = '${fparse 1*dt}'
 
     [TimeStepper]
         type = IterationAdaptiveDT
@@ -300,7 +309,7 @@ t_ramp = '${fparse (Tmax-T0)/dTdt*60}' #s
     []
     [csv]
         type = CSV
-        file_base = 'diff_time_heat_v3/out'
+        file_base = 'diff_time_heat_v4/out'
     []
     print_linear_residuals = false
 []

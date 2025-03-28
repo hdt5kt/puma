@@ -135,10 +135,16 @@
         mass_solid = 'state/ms'
         reaction_amount = 'state/alpha'
     []
+    [amount_rate_new]
+        type = ScalarVariableRate
+        variable = 'state/alpha'
+        time = 'forces/tt'
+        rate = 'state/alpha_dot'
+    []
     [model_solver]
         type = ComposedModel
-        models = 'model_update amount_new'
-        additional_outputs = 'state/ms'
+        models = 'model_update amount_new amount_rate_new'
+        additional_outputs = 'state/ms state/alpha'
     []
     ################################### POST PROCESS #################################
     #########

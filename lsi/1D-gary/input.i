@@ -1,8 +1,8 @@
 n = 100
 L = 1
-t_end = 7200
+t_end = 1800
 t_ramp = 600
-dt0 = 10
+dt0 = 5
 
 phi_p0 = 0
 phi_s0 = 0.6
@@ -99,7 +99,7 @@ D = 1e-3
     type = InfiltrationWake
     variable = alpha
     boundary = right
-    inlet_flux = '0'
+    inlet_flux = 'flux'
     outlet_flux = 'flux'
     solid_fraction = phi_s
     solid_fraction_derivative = phi_s_derivative
@@ -183,7 +183,7 @@ D = 1e-3
   nl_max_its = 12
 
   end_time = ${t_end}
-  dtmax = '${fparse 10*dt0}'
+  dtmax = '${fparse 1*dt0}'
 
   [TimeStepper]
     type = IterationAdaptiveDT

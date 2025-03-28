@@ -1,11 +1,11 @@
 ############### Input ################
 # Simulation parameters
 dt = 5
-nx = 20
-ny = 20
+nx = 50
+ny = 50
 
 # denisty kgm-3
-rho_s = 320
+rho_s = 2260
 rho_b = 1250 # 1.2 and 1.4
 rho_g = 1
 rho_p = 3210
@@ -42,9 +42,9 @@ order = 1.0
 order_k = 1.0
 
 # initial condition #kg
-ms0 = 30
-mb0 = 120
-mp0 = 300
+ms0 = 15
+mb0 = 60
+mp0 = 150
 mg0 = 1e-4
 alpha0 = '${fparse 1/(1-Y)}' # 1/(1-Y)
 vv0 = 0.1 #void fraction
@@ -56,10 +56,10 @@ xmax = '${fparse (V0)^(1/3)}'
 #xmax = '${fparse nx*dx}'
 
 T0 = 300 #K
-Tmax = 800 #K
-Tref = 273 #K
+Tmax = 1000 #K
+Tref = 300 #K
 
-dTdt = 10 #Kmin-1 heating rate
+dTdt = 20 #Kmin-1 heating rate
 t_ramp = '${fparse (Tmax-T0)/dTdt*60}' #s
 t_hold = 3 #hrs
 theat = '${fparse t_ramp+t_hold*3600}'
@@ -366,7 +366,7 @@ htc = 200 #Wm-2K assume air doesnt move much
     nl_abs_tol = 1e-8
 
     end_time = ${total_time}
-    dtmax = '${fparse 12*dt}'
+    dtmax = '${fparse 20*dt}'
 
     [TimeStepper]
         type = IterationAdaptiveDT
@@ -388,7 +388,7 @@ htc = 200 #Wm-2K assume air doesnt move much
     []
     [csv]
         type = CSV
-        file_base = 'heating_and_cooling/out'
+        file_base = 'heating_and_cooling_2/out'
     []
     print_linear_residuals = false
 []

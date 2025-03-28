@@ -19,6 +19,9 @@ public:
   PumaApp(InputParameters parameters);
   virtual ~PumaApp();
 
+  void setupOptions() override;
+  void runInputFile() override;
+
   static void registerApps();
-  static void registerAll(Factory & f, ActionFactory & af, Syntax & s);
+  static void registerAll(Factory & f, ActionFactory & af, Syntax & syntax);
 };

@@ -156,22 +156,22 @@
         to_var = 'state/M'
     []
     [wb]
-        type = Ratio
-        numerator = 'state/mb'
-        denominator = 'state/M'
-        out = 'state/wb'
+        type = ScalarVariableMultiplication
+        from_var = 'state/mb state/M'
+        to_var = 'state/wb'
+        inverse_condition = 'false true'
     []
     [wp]
-        type = Ratio
-        numerator = 'state/mp'
-        denominator = 'state/M'
-        out = 'state/wp'
+        type = ScalarVariableMultiplication
+        from_var = 'state/mp state/M'
+        to_var = 'state/wp'
+        inverse_condition = 'false true'
     []
     [ws]
-        type = Ratio
-        numerator = 'state/ms'
-        denominator = 'state/M'
-        out = 'state/ws'
+        type = ScalarVariableMultiplication
+        from_var = 'state/ms state/M'
+        to_var = 'state/ws'
+        inverse_condition = 'false true'
     []
     [wout]
         type = ComposedModel
@@ -204,28 +204,31 @@
         to_var = 'state/V'
     []
     [vb]
-        type = Ratio
-        numerator = 'state/Vb'
-        denominator = 'state/V'
-        out = 'state/vb'
+        type = ScalarVariableMultiplication
+        from_var = 'state/Vb state/V'
+        to_var = 'state/vb'
+        inverse_condition = 'false true'
     []
     [vp]
-        type = Ratio
-        numerator = 'state/Vp'
-        denominator = 'state/V'
-        out = 'state/vp'
+        type = ScalarVariableMultiplication
+        from_var = 'state/Vp state/V'
+        to_var = 'state/vp'
+        constant_coefficient = 1.0
+        inverse_condition = 'false true'
     []
     [vs]
-        type = Ratio
-        numerator = 'state/Vs'
-        denominator = 'state/V'
-        out = 'state/vs'
+        type = ScalarVariableMultiplication
+        from_var = 'state/Vs state/V'
+        to_var = 'state/vs'
+        constant_coefficient = 1.0
+        inverse_condition = 'false true'
     []
     [vv]
-        type = Ratio
-        numerator = 'state/Vv'
-        denominator = 'state/V'
-        out = 'state/vv'
+        type = ScalarVariableMultiplication
+        from_var = 'state/Vv state/V'
+        to_var = 'state/vv'
+        constant_coefficient = 1.0
+        inverse_condition = 'false true'
     []
     [vout]
         type = ComposedModel
@@ -246,10 +249,9 @@
         to_var = 'state/cp'
     []
     [rhocp]
-        type = Product
-        variable_a = 'state/rho'
-        variable_b = 'state/cp'
-        out = 'state/rhocp'
+        type = ScalarVariableMultiplication
+        from_var = 'state/rho state/cp'
+        to_var = 'state/rhocp'
     []
     [K]
         type = ScalarLinearCombination
