@@ -23,7 +23,7 @@
         reaction_amount = 'state/alpha'
     []
     [reaction]
-        type = ChemicalReactionModel
+        type = ChemicalReactionMechanism
         scaling_constant = '${order_k}'
         reaction_order = '${order}'
         reaction_amount = 'state/alpha'
@@ -159,19 +159,19 @@
         type = ScalarVariableMultiplication
         from_var = 'state/mb state/M'
         to_var = 'state/wb'
-        inverse_condition = 'false true'
+        reciprocal = 'false true'
     []
     [wp]
         type = ScalarVariableMultiplication
         from_var = 'state/mp state/M'
         to_var = 'state/wp'
-        inverse_condition = 'false true'
+        reciprocal = 'false true'
     []
     [ws]
         type = ScalarVariableMultiplication
         from_var = 'state/ms state/M'
         to_var = 'state/ws'
-        inverse_condition = 'false true'
+        reciprocal = 'false true'
     []
     [wout]
         type = ComposedModel
@@ -207,28 +207,28 @@
         type = ScalarVariableMultiplication
         from_var = 'state/Vb state/V'
         to_var = 'state/vb'
-        inverse_condition = 'false true'
+        reciprocal = 'false true'
     []
     [vp]
         type = ScalarVariableMultiplication
         from_var = 'state/Vp state/V'
         to_var = 'state/vp'
         constant_coefficient = 1.0
-        inverse_condition = 'false true'
+        reciprocal = 'false true'
     []
     [vs]
         type = ScalarVariableMultiplication
         from_var = 'state/Vs state/V'
         to_var = 'state/vs'
         constant_coefficient = 1.0
-        inverse_condition = 'false true'
+        reciprocal = 'false true'
     []
     [vv]
         type = ScalarVariableMultiplication
         from_var = 'state/Vv state/V'
         to_var = 'state/vv'
         constant_coefficient = 1.0
-        inverse_condition = 'false true'
+        reciprocal = 'false true'
     []
     [vout]
         type = ComposedModel

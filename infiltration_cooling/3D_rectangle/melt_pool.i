@@ -5,7 +5,7 @@
 [Mesh]
     [mesh0]
         type = FileMeshGenerator
-        file = 'gold/core_in_meltpool_test.msh'
+        file = 'gold/core_in_meltpool_v2.msh'
     []
     [delete]
         type = BlockDeletionGenerator

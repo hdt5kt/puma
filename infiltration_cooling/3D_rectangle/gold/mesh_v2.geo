@@ -21,7 +21,6 @@ r_pool_up = 3;
 taper_depth = 1;
 furnace_depth = 2;
 r_pool_down = ((core_shift+(furnace_depth-taper_depth))/furnace_depth)*r_pool_up;
-h_bottom = 1;
 h_depth = h_core;
 
 

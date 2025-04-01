@@ -21,7 +21,7 @@ PumaTestApp::validParams()
   return params;
 }
 
-PumaTestApp::PumaTestApp(InputParameters parameters) : MooseApp(parameters)
+PumaTestApp::PumaTestApp(InputParameters parameters) : PumaApp(parameters)
 {
   PumaTestApp::registerAll(
       _factory, _action_factory, _syntax, getParam<bool>("allow_test_objects"));

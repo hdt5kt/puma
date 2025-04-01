@@ -9,9 +9,9 @@
 
 #pragma once
 
-#include "MooseApp.h"
+#include "PumaApp.h"
 
-class PumaTestApp : public MooseApp
+class PumaTestApp : public PumaApp
 {
 public:
   static InputParameters validParams();

@@ -9,18 +9,14 @@
 
 #pragma once
 
-#include "MooseApp.h"
+#include "SolidMechanicsApp.h"
 
-class PumaApp : public MooseApp
+class PumaApp : public SolidMechanicsApp
 {
 public:
   static InputParameters validParams();
 
   PumaApp(InputParameters parameters);
-  virtual ~PumaApp();
-
-  void setupOptions() override;
-  void runInputFile() override;
 
   static void registerApps();
   static void registerAll(Factory & f, ActionFactory & af, Syntax & syntax);

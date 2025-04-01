@@ -29,7 +29,7 @@
         type = ScalarLinearCombination
         from_var = 'state/qnorm'
         to_var = 'state/q'
-        coefficients = 'parameters/Hlatent' #'${H_latent}'
+        coefficients = '${H_latent}'
     []
     [qdot]
         type = ScalarVariableRate
@@ -90,10 +90,9 @@
         to_var = 'state/cp'
     []
     [rhocp]
-        type = Product
-        variable_a = 'state/rho'
-        variable_b = 'state/cp'
-        out = 'state/rhocp'
+        type = ScalarVariableMultiplication
+        from_var = 'state/rho state/cp'
+        to_var = 'state/rhocp'
     []
     [elout]
         type = ComposedModel

@@ -1,4 +1,4 @@
-base_fold = 'less_Si_high_Dbar'
+base_fold = 'less_Si_high_Dbar_newmesh'
 
 ############### Input ################
 
@@ -10,7 +10,7 @@ total_time = 1800 #s
 t_ramp = 10
 flux = 2.5e-3 #5e-2
 #flux_out = 1e-5
-zshift = -1
+zshift = 0
 
 levelset_smooth_transistion = 0.1 #cm - mesh dependence
 
@@ -38,7 +38,19 @@ D_macro = 0.01 #cm2 s-1
 # initial condition
 phi0_SiC = 0.4
 phi0_C = 0.1
-h0_pool = 1.2 #cm
+
+m_Si = 13.94 #g
+
+## pool geometry (needs to matched the mesh file) - cm
+# reference point is the center of the core
+x_core = 1.48
+y_core = 1.48
+core_shift = 0.1
+
+# pool - cm
+r_pool_up = 3
+taper_depth = 1
+furnace_depth = 2
 
 ## Calculations
 D_bar = '${fparse D_LP/(l_c^2)}'
@@ -55,10 +67,23 @@ chem_ratio = '${fparse k_SiC/k_C}'
 alpha0_SiC = '${fparse phi0_SiC/omega_SiC}'
 alpha0_C = '${fparse phi0_C/omega_C}'
 
+r_pool_down = '${fparse ((core_shift+(furnace_depth-taper_depth))/furnace_depth)*r_pool_up}'
+h_pool_low = '${fparse furnace_depth-taper_depth-core_shift}'
+
+V_pool_low = '${fparse 1/3*3.14156*h_pool_low*(r_pool_up^2 + r_pool_down^2 + r_pool_up*r_pool_down) - x_core*y_core*h_pool_low}'
+V_extra_bottom = '${fparse x_core*y_core*core_shift}'
+
+V_Si = '${fparse m_Si/rho_Si}'
+
+h0_pool0 = '${fparse if(V_Si < (V_pool_low+V_extra_bottom), (V_pool_low-V_Si - V_extra_bottom)/(1/3*3.14156*(r_pool_up^2 + r_pool_down^2 + r_pool_up*r_pool_down) - x_core*y_core), (V_Si-V_pool_low-V_extra_bottom)/(3.14156*r_pool_up^2-x_core*y_core)+h_pool_low)}'
+h0_pool = '${fparse h0_pool0 + core_shift}'
+
+# h0_pool = 1.2 #cm
+
 [Mesh]
     [mesh0]
         type = FileMeshGenerator
-        file = 'gold/core_in_meltpool_test.msh'
+        file = 'gold/core_in_meltpool_v2.msh'
     []
     [delete]
         type = BlockDeletionGenerator
@@ -230,10 +255,10 @@ alpha0_C = '${fparse phi0_C/omega_C}'
 [VectorPostprocessors]
     [data_center_line]
         type = LineValueSampler
-        end_point = '0 0 6.36'
+        end_point = '0 0 6.46'
         num_points = 50
         sort_by = 'z'
-        start_point = '0 0 0'
+        start_point = '0 0 0.1'
         variable = 'phi_SiC void_fraction phi_C phi_Si'
         execute_on = 'TIMESTEP_END'
     []

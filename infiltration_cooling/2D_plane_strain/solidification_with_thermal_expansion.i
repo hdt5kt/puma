@@ -150,10 +150,6 @@ htc = 0.1 #Wcm-2K
         neml2_inputs = '     forces/T      forces/t      old_forces/t  old_state/q     old_state/alpha state/alpha
                              forces/eps    state/phi_P   state/phi_S   old_state/phi_P old_state/phi_S'
 
-        moose_parameter_types = 'MATERIAL'
-        moose_parameters = '     Hlatent'
-        neml2_parameters = '     parameters/Hlatent'
-
         moose_output_types = 'MATERIAL      MATERIAL      MATERIAL    MATERIAL        MATERIAL
                               MATERIAL      MATERIAL      MATERIAL    MATERIAL        MATERIAL'
         moose_outputs = '     f_Si_solid    qdot          q           alpha_Si        neml2_stress

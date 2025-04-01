@@ -138,22 +138,19 @@ htc = 200 #Wm-2K assume air doesnt move much
         moose_input_types = 'VARIABLE     POSTPROCESSOR POSTPROCESSOR MATERIAL
                              MATERIAL     MATERIAL      MATERIAL      MATERIAL        MATERIAL
                              MATERIAL     MATERIAL      MATERIAL      MATERIAL        MATERIAL
-                             MATERIAL     MATERIAL      MATERIAL      MATERIAL        MATERIAL
-                             MATERIAL     MATERIAL'
+                             MATERIAL'
         moose_inputs = '     T            time          time          alpha
                              mb           mg            mp            ms              Vv
                              mb           mg            mp            ms              Vv
-                             neml2_strain mbo           mso           Vo              mbo
-                             mso          Vo'
+                             neml2_strain'
         neml2_inputs = '     forces/T     forces/tt     old_forces/tt old_state/alpha
                              state/mb     state/mg      state/mp      state/ms        state/Vv
                              old_state/mb old_state/mg  old_state/mp  old_state/ms    old_state/Vv
-                             forces/eps   old_state/mb0 old_state/ms0 old_state/V0    state/mb0
-                             state/ms0    state/V0'
+                             forces/eps'
 
-        moose_parameter_types = 'MATERIAL       MATERIAL       MATERIAL'
-        moose_parameters = '     ms0            mb0            V0'
-        neml2_parameters = '     amount_ms0     amount_mb0     volume_strain_V0'
+        moose_parameter_types = 'MATERIAL       MATERIAL        MATERIAL       MATERIAL       MATERIAL'
+        moose_parameters = '     ms0            mb0             ms0            mb0            V0'
+        neml2_parameters = '     amount_ms0     amount_mb0      amount_new_ms0 amount_new_mb0 volume_strain_V0'
 
         moose_output_types = 'MATERIAL      MATERIAL  MATERIAL  MATERIAL
                               MATERIAL      MATERIAL  MATERIAL  MATERIAL    MATERIAL
@@ -181,8 +178,8 @@ htc = 200 #Wm-2K assume air doesnt move much
         neml2_derivatives = '     state/alpha_dot forces/T; state/rhocp forces/T; state/K forces/T;
                                   state/sigma forces/eps'
 
-        initialize_outputs = '      mp  mb  mg  ms  alpha  Vv  mso mbo Vo'
-        initialize_output_values = 'mp0 mb0 mg0 ms0 alpha0 Vv0 ms0 mb0 V0'
+        initialize_outputs = '      mp  mb  mg  ms  alpha  Vv'
+        initialize_output_values = 'mp0 mb0 mg0 ms0 alpha0 Vv0'
     []
 []
 
