@@ -6,15 +6,9 @@ t_ramp = ${total_time}
 nx = 1
 
 # denisty kgm-3
-rho_s = 320
+rho_s = 2100
 rho_b = 1250 # 1.2 and 1.4
-rho_g = 1
 rho_p = 3210
-
-rho_sm1 = '${fparse 1/rho_s}'
-rho_bm1 = '${fparse 1/rho_b}'
-rho_gm1 = '${fparse 1/rho_g}'
-rho_pm1 = '${fparse 1/rho_p}'
 
 # heat capacity Jkg-1K-1
 cp_s = 1592
@@ -35,26 +29,38 @@ R = 8.31446261815324 # JK-1mol-1
 #hrp = 1.58e6 # J kg-1
 
 Y = 0.575
-Ym1 = '${fparse 1/Y}' # 1/Y
 invYm1 = '${fparse 1-1/Y}' # 1-1/Y
 
 order = 1.0
 order_k = 0.00015
 
-# initial condition
-ms0 = 0.0
-mb0 = 10
-mp0 = 0.0
-mg0 = 0.0
-alpha0 = '${fparse 1/(1-Y)}' # 1/(1-Y)
-vv0 = 0.0 #void fraction
-Vv0 = '${fparse vv0/(1-vv0)*(ms0/rho_s + mb0/rho_b + mp0/rho_p)}'
+# models
+cp_to_wg_relation = 0.001
+op_to_solid_relation = 0.1
+rho_g = 13 #kgm-3
 
-V0 = '${fparse ms0/rho_s + mb0/rho_b + mp0/rho_p + Vv0}'
+# initial condition
+ms0 = 0.001
+mb0 = 10
+mp0 = 0.001
+mg0 = 0.0
+mgcp0 = '${fparse mg0}'
+phiop0 = 0.0 #void fraction
+T0 = 300 #K
+
+# calculations
+
+Mref = '${fparse ms0 + mb0 + mp0 + mg0}'
+V0 = '${fparse (ms0/rho_s + mb0/rho_b + mp0/rho_p + mgcp0/rho_g)/(1 - phiop0)}'
+wb0 = '${fparse mb0/Mref}'
+ws0 = '${fparse ms0/Mref}'
+wp0 = '${fparse mp0/Mref}'
+wgcp0 = '${fparse mgcp0/Mref}'
+phis0 = '${fparse ws0*Mref/(rho_s*V0)}'
+alpha0 = '${fparse 1/(1-Y)}' # 1/(1-Y)
 
 xmax = '${fparse V0/nx}'
 
-T0 = 300 #K
 Tmax = 1500 #K
 #Tref = 273 #K
 
@@ -79,52 +85,54 @@ Tmax = 1500 #K
 
 [NEML2]
     input = 'neml2/PR_pyrolysis.i'
-    cli_args = 'rho_s=${rho_s} rho_b=${rho_b} rho_g=${rho_g} rho_p=${rho_p}
-                rho_sm1=${rho_sm1} rho_bm1=${rho_bm1} rho_gm1=${rho_gm1} rho_pm1=${rho_pm1}
+    cli_args = 'rho_s=${rho_s} rho_b=${rho_b} rho_g=${rho_g} rho_p=${rho_p} Mref=${Mref}
+                rho_sm1M=${fparse Mref/rho_s} rho_bm1M=${fparse Mref/rho_b}
+                rho_gm1M=${fparse Mref/rho_g} rho_pm1M=${fparse Mref/rho_p}
                 cp_s=${cp_s} cp_b=${cp_b} cp_g=${cp_g} cp_p=${cp_p}
                 k_s=${k_s} k_b=${k_b} k_g=${k_g} k_p=${k_p}
-                Ea=${Ea} A=${A} R=${R} Y=${Y} Ym1=${Ym1} invYm1=${invYm1}
+                Ea=${Ea} A=${A} R=${R} Y=${Y} invYm1=${invYm1}
                 order=${order} order_k=${order_k}
-                ms0=${ms0} mb0=${mb0} mg0=${mg0} mp0=${mp0} Vv0=${Vv0} alpha0=${alpha0}'
+                cp_to_wg_relation=${cp_to_wg_relation} op_to_solid_relation=${op_to_solid_relation}
+                ws0=${ws0} wb0=${wb0} alpha0=${alpha0}'
     [all]
         model = 'model'
         verbose = true
         device = 'cpu'
 
-        moose_input_types = 'VARIABLE POSTPROCESSOR POSTPROCESSOR MATERIAL        MATERIAL MATERIAL MATERIAL MATERIAL MATERIAL MATERIAL     MATERIAL     MATERIAL     MATERIAL     MATERIAL'
-        moose_inputs = '     T        time          time          alpha           mb       mg       mp       ms       Vv       mb           mg           mp           ms           Vv'
-        neml2_inputs = '     forces/T forces/tt     old_forces/tt old_state/alpha state/mb state/mg state/mp state/ms state/Vv old_state/mb old_state/mg old_state/mp old_state/ms old_state/Vv'
+        moose_input_types = 'VARIABLE     POSTPROCESSOR POSTPROCESSOR MATERIAL        MATERIAL
+                             MATERIAL     MATERIAL      MATERIAL      MATERIAL        MATERIAL
+                             MATERIAL     MATERIAL      MATERIAL      MATERIAL        MATERIAL'
+        moose_inputs = '     T            time          time          alpha           phis
+                             wb           wp            ws            wgcp            phiop
+                             wb           wp            ws            wgcp            phiop'
+        neml2_inputs = '     forces/T     forces/tt     old_forces/tt old_state/alpha old_state/phis
+                             state/wb     state/wp      state/ws      state/wgcp      state/phiop
+                             old_state/wb old_state/wp  old_state/ws  old_state/wgcp  old_state/phiop'
 
-        moose_output_types = 'MATERIAL MATERIAL MATERIAL  MATERIAL
-                              MATERIAL MATERIAL MATERIAL  MATERIAL   MATERIAL
-                              MATERIAL MATERIAL MATERIAL  MATERIAL
-                              MATERIAL MATERIAL MATERIAL  MATERIAL
-                              MATERIAL MATERIAL MATERIAL  MATERIAL'
-        moose_outputs = '     mp       mb       mg        ms
-                              wp       wb       ws        alpha      alpha_dot
-                              vp       vb       vv        vs
-                              Vp       Vb       Vv        Vs
-                              K        V        rho       cp'
-        neml2_outputs = '     state/mp state/mb state/mg  state/ms
-                              state/wp state/wb state/ws  state/alpha state/alpha_dot
-                              state/vp state/vb state/vv  state/vs
-                              state/Vp state/Vb state/Vv  state/Vs
-                              state/K  state/V  state/rho state/cp'
+        moose_output_types = 'MATERIAL        MATERIAL   MATERIAL   MATERIAL     MATERIAL
+                              MATERIAL        MATERIAL   MATERIAL   MATERIAL     MATERIAL
+                              MATERIAL        MATERIAL   MATERIAL   MATERIAL'
+        moose_outputs = '     wb              wp         ws         wgcp         phiop
+                              phib            phip       phis       phigcp       alpha
+                              alpha_dot       K          V          rhocp'
+        neml2_outputs = '     state/wb        state/wp   state/ws   state/wgcp   state/phiop
+                              state/phib      state/phip state/phis state/phigcp state/alpha
+                              state/alpha_dot state/K    state/V     state/rhocp'
 
         #moose_derivative_types = ''
         #moose_derivatives = ''
         #neml2_derivatives = ''
 
-        initialize_outputs = '      mp  mb  mg  ms  alpha  Vv'
-        initialize_output_values = 'mp0 mb0 mg0 ms0 alpha0 Vv0'
+        initialize_outputs = '      wp  wb  wgcp  ws  alpha  phis  phiop'
+        initialize_output_values = 'wp0 wb0 wgcp0 ws0 alpha0 phis0 phiop0'
     []
 []
 
 [Materials]
     [init_mat]
         type = GenericConstantMaterial
-        prop_names = 'mp0 mb0 mg0 ms0 alpha0 Vv0'
-        prop_values = '${mp0} ${mb0} ${mg0} ${ms0} ${alpha0} ${Vv0}'
+        prop_names = 'wp0 wb0 wgcp0 ws0 alpha0 phis0 phiop0'
+        prop_values = '${wp0} ${wb0} ${wgcp0} ${ws0} ${alpha0} ${phis0} ${phiop0}'
     []
 []
 
@@ -141,27 +149,6 @@ Tmax = 1500 #K
         type = ElementAverageMaterialProperty
         mat_prop = alpha_dot
     []
-    [ms]
-        type = ElementAverageMaterialProperty
-        mat_prop = ms
-    []
-    [mb]
-        type = ElementAverageMaterialProperty
-        mat_prop = mb
-    []
-    [mg]
-        type = ElementAverageMaterialProperty
-        mat_prop = mg
-    []
-    [mp]
-        type = ElementAverageMaterialProperty
-        mat_prop = mp
-    []
-    [alpha]
-        type = ElementAverageMaterialProperty
-        mat_prop = alpha
-    []
-    ########## WEIGHT FRACTION #################################
     [ws]
         type = ElementAverageMaterialProperty
         mat_prop = ws
@@ -174,61 +161,48 @@ Tmax = 1500 #K
         type = ElementAverageMaterialProperty
         mat_prop = wp
     []
-    ########## VOLUME #################################
-    [Vs]
+    [wgcp]
         type = ElementAverageMaterialProperty
-        mat_prop = Vs
-    []
-    [Vb]
-        type = ElementAverageMaterialProperty
-        mat_prop = Vb
-    []
-    [Vp]
-        type = ElementAverageMaterialProperty
-        mat_prop = Vp
-    []
-    [Vv]
-        type = ElementAverageMaterialProperty
-        mat_prop = Vv
+        mat_prop = wgcp
     []
     ########## VOLUME FRACTION #################################
-    [vs]
+    [phis]
         type = ElementAverageMaterialProperty
-        mat_prop = vs
+        mat_prop = phis
     []
-    [vb]
+    [phib]
         type = ElementAverageMaterialProperty
-        mat_prop = vb
+        mat_prop = phib
     []
-    [vp]
+    [phip]
         type = ElementAverageMaterialProperty
-        mat_prop = vp
+        mat_prop = phip
     []
-    [vv]
+    [phigcp]
         type = ElementAverageMaterialProperty
-        mat_prop = vv
+        mat_prop = phigcp
+    []
+    [phiop]
+        type = ElementAverageMaterialProperty
+        mat_prop = phiop
     []
     ########## ELEMENT FRACTION #################################
     [K]
         type = ElementAverageMaterialProperty
         mat_prop = K
     []
-    [cp]
-        type = ElementAverageMaterialProperty
-        mat_prop = cp
-    []
     [V]
         type = ElementAverageMaterialProperty
         mat_prop = V
     []
-    [rho]
+    [rhocp]
         type = ElementAverageMaterialProperty
-        mat_prop = rho
+        mat_prop = rhocp
     []
 []
 
 [ICs]
-    [alphaIC]
+    [TIC]
         type = ConstantIC
         variable = T
         value = ${T0}

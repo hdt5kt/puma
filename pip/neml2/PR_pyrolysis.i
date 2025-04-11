@@ -12,8 +12,8 @@
     ################ residual term associated with wbs
     [amount]
         type = PyrolysisConversionAmount
-        initial_solid_mass_fraction = '${ws0}'
-        initial_binder_mass_fraction = '${wb0}'
+        initial_solid_mass_fraction = 1.0
+        initial_binder_mass_fraction = 1.0
         reaction_yield = '${Y}'
 
         solid_mass_fraction = 'state/ws'
@@ -149,10 +149,40 @@
         type = ComposedModel
         models = 'V_RVE open_pores_volume_rate solid_volume_fraction solid_volume_rate residual_op'
     []
+    ################ residual term associated with volumetric strain rate
+    #[volume_rate]
+    #    type = ScalarVariableRate
+    #    variable = 'state/V'
+    #    time = 'forces/tt'
+    #    rate = 'state/Vdot'
+    #[]
+    #[volume_strain_rate]
+    #    type = ScalarVolumeChangeEigenstrainRate
+    #    volume = 'state/V'
+    #    volume_rate = 'state/Vdot'
+    #    eigenstrain = 'state/Ev'
+    #    eigenstrain_rate = 'state/eigen_volume_rate'
+    #[]
+    #[Ev_rate]
+    #    type = ScalarVariableRate
+    #    variable = 'state/Ev'
+    #    time = 'forces/tt'
+    #    rate = 'state/Ev_dot'
+    #[]
+    #[residual_Ev]
+    #    type = ScalarLinearCombination
+    #    coefficients = '1.0 -1.0'
+    #    from_var = 'state/Ev_dot state/eigen_volume_rate'
+    #    to_var = 'residual/Ev'
+    #[]
+    #[rEv]
+    #    type = ComposedModel
+    #    models = 'V_RVE volume_rate volume_strain_rate Ev_rate residual_Ev'
+    #[]
     ##########################################################################
     [model_residual]
         type = ComposedModel
-        models = 'rwp rws rwb rwgcp rphiop'
+        models = 'rwp rws rwb rwgcp rphiop' # rEv'
         automatic_scaling = true
     []
     [model_update]
@@ -162,8 +192,8 @@
     []
     [amount_new]
         type = PyrolysisConversionAmount
-        initial_solid_mass_fraction = '${ws0}'
-        initial_binder_mass_fraction = '${wb0}'
+        initial_solid_mass_fraction = 1.0
+        initial_binder_mass_fraction = 1.0
         reaction_yield = '${Y}'
 
         solid_mass_fraction = 'state/ws'
@@ -260,9 +290,46 @@
         models = 'phi_out rho cp rhocp K'
         additional_outputs = 'state/phib state/phip state/phis'
     []
+    #########
+    ######### stress-strain relation
+    [thermal_strain]
+        type = ThermalEigenstrain
+        reference_temperature = '${Tref}'
+        temperature = 'forces/T'
+        CTE = '${g}'
+        eigenstrain = 'forces/Et'
+    []
+    [volume_strain]
+        #type = ScalartoDiagSR2
+        #input = 'state/Ev'
+        #output = 'forces/EvSR2'
+        type = VolumeChangeEigenstrain
+        volume = 'state/V'
+        reference_volume = 1.0
+        eigenstrain = 'forces/EvSR2'
+    []
+    [elastic_strain]
+        type = SR2LinearCombination
+        coefficients = '1.0 -1.0 -1.0'
+        from_var = 'forces/eps forces/Et forces/EvSR2'
+        to_var = 'state/eps_total'
+    []
+    [stress_strain]
+        type = LinearIsotropicElasticity
+        strain = 'state/eps_total'
+        stress = 'state/sigma'
+        coefficients = '${E} ${mu}'
+        coefficient_types = 'YOUNGS_MODULUS POISSONS_RATIO'
+    []
+    [ssout]
+        type = ComposedModel
+        models = 'thermal_strain elastic_strain stress_strain volume_strain V_RVE'
+    []
+    #######################################################################################
     [model]
         type = ComposedModel
-        models = 'model_solver elout'
-        additional_outputs = 'state/wb state/ws state/wp state/wgcp state/phiop'
+        models = 'model_solver elout ssout'
+        additional_outputs = 'state/wb state/ws state/wp state/wgcp state/phiop' # state/Ev'
     []
+    #######################################################################################
 []

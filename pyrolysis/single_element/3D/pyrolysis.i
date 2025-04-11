@@ -1,27 +1,14 @@
 ############### Input ################
 # Simulation parameters
-
-T0 = 400 #K
-Tmax = 1000 #K
-Tref = 273 #K
-
-dt = 10
-dTdt = 10 #Kmin-1 heating rate
-t_ramp = '${fparse (Tmax-T0)/dTdt*60}' #s
-total_time = ${t_ramp}
-
-n = 1
+dt = 1
+total_time = 3600
+t_ramp = ${total_time}
+nx = 1
 
 # denisty kgm-3
-rho_s = 320
+rho_s = 2100
 rho_b = 1250 # 1.2 and 1.4
-rho_g = 1
 rho_p = 3210
-
-rho_sm1 = '${fparse 1/rho_s}'
-rho_bm1 = '${fparse 1/rho_b}'
-rho_gm1 = '${fparse 1/rho_g}'
-rho_pm1 = '${fparse 1/rho_p}'
 
 # heat capacity Jkg-1K-1
 cp_s = 1592
@@ -36,29 +23,44 @@ k_g = 1e-4
 k_p = 380 #120 and 490
 
 # reaction type
-Ea = 177820 # J mol-1
-A = 5.24e12 # s-1
+Ea = 41220 # 177820 # J mol-1
+A = 1.24e4 # 5.24e12 # s-1
 R = 8.31446261815324 # JK-1mol-1
-#hrp = 1.58e6 #e6 J kg-1
-#factor = 1.0
+#hrp = 1.58e6 # J kg-1
 
-Y = 0.55
-Ym1 = '${fparse 1/Y}' # 1/Y
+Y = 0.575
 invYm1 = '${fparse 1-1/Y}' # 1-1/Y
 
 order = 1.0
-order_k = 1.0
+order_k = 0.00015
 
-# initial condition #kg
-ms0 = 300
-mb0 = 1200
-mp0 = 3000
-mg0 = 1e-4
+# models
+cp_to_wg_relation = 0.001
+op_to_solid_relation = 0.1
+rho_g = 13 #kgm-3
+
+# initial condition
+ms0 = 1
+mb0 = 10
+mp0 = 3
+mg0 = 0.001
+mgcp0 = '${fparse mg0}'
+phiop0 = 0.001 #void fraction
+T0 = 300 #K
+
+# calculations
+
+Mref = '${fparse ms0 + mb0 + mp0 + mg0}'
+V0 = '${fparse (ms0/rho_s + mb0/rho_b + mp0/rho_p + mgcp0/rho_g)/(1 - phiop0)}'
+wb0 = '${fparse mb0/Mref}'
+ws0 = '${fparse ms0/Mref}'
+wp0 = '${fparse mp0/Mref}'
+wgcp0 = '${fparse mgcp0/Mref}'
+phis0 = '${fparse ws0*Mref/(rho_s*V0)}'
 alpha0 = '${fparse 1/(1-Y)}' # 1/(1-Y)
-vv0 = 0.1 #void fraction
-Vv0 = '${fparse vv0/(1-vv0)*(ms0/rho_s + mb0/rho_b + mp0/rho_p)}'
 
-V0 = '${fparse ms0/rho_s + mb0/rho_b + mp0/rho_p + Vv0}'
+Tmax = 1500 #K
+Tref = 300 #K
 
 #### stress-strain ####
 E = 400e9
@@ -74,9 +76,9 @@ g = 0.0
 [Mesh]
     type = GeneratedMesh
     dim = 3
-    nx = '${n}'
-    ny = '${n}'
-    nz = '${n}'
+    nx = '${nx}'
+    ny = '${nx}'
+    nz = '${nx}'
     xmax = 1.0
     ymax = 1.0
     zmax = 1.0
@@ -114,50 +116,45 @@ g = 0.0
 
 [NEML2]
     input = 'neml2/PR_pyrolysis.i'
-    cli_args = 'rho_s=${rho_s} rho_b=${rho_b} rho_g=${rho_g} rho_p=${rho_p}
-                rho_sm1=${rho_sm1} rho_bm1=${rho_bm1} rho_gm1=${rho_gm1} rho_pm1=${rho_pm1}
+    cli_args = 'rho_s=${rho_s} rho_b=${rho_b} rho_g=${rho_g} rho_p=${rho_p} Mref=${Mref}
+                rho_sm1M=${fparse Mref/rho_s} rho_bm1M=${fparse Mref/rho_b}
+                rho_gm1M=${fparse Mref/rho_g} rho_pm1M=${fparse Mref/rho_p}
                 cp_s=${cp_s} cp_b=${cp_b} cp_g=${cp_g} cp_p=${cp_p}
                 k_s=${k_s} k_b=${k_b} k_g=${k_g} k_p=${k_p}
-                Ea=${Ea} A=${A} R=${R} Y=${Y} Ym1=${Ym1} invYm1=${invYm1}
+                Ea=${Ea} A=${A} R=${R} Y=${Y} invYm1=${invYm1}
                 order=${order} order_k=${order_k}
-                ms0=${ms0} mb0=${mb0} mg0=${mg0} mp0=${mp0} Vv0=${Vv0} V0=${V0} alpha0=${alpha0}
-                E=${E} mu=${mu} g=${g} Tref=${Tref}'
+                cp_to_wg_relation=${cp_to_wg_relation} op_to_solid_relation=${op_to_solid_relation}
+                ws0=${ws0} wb0=${wb0} alpha0=${alpha0} Tref=${Tref} E=${E} g=${g} mu=${mu}'
     [all]
         model = 'model'
         verbose = true
         device = 'cpu'
 
-        moose_input_types = 'VARIABLE     POSTPROCESSOR POSTPROCESSOR MATERIAL
+        moose_input_types = 'VARIABLE     POSTPROCESSOR POSTPROCESSOR MATERIAL        MATERIAL
                              MATERIAL     MATERIAL      MATERIAL      MATERIAL        MATERIAL
                              MATERIAL     MATERIAL      MATERIAL      MATERIAL        MATERIAL
-                             MATERIAL'
-        moose_inputs = '     T            time          time          alpha
-                             mb           mg            mp            ms              Vv
-                             mb           mg            mp            ms              Vv
-                             neml2_strain'
-        neml2_inputs = '     forces/T     forces/tt     old_forces/tt old_state/alpha
-                             state/mb     state/mg      state/mp      state/ms        state/Vv
-                             old_state/mb old_state/mg  old_state/mp  old_state/ms    old_state/Vv
-                             forces/eps'
+                             MATERIAL     MATERIAL      MATERIAL      MATERIAL'
+        moose_inputs = '     T            time          time          alpha           phis
+                             wb           wp            ws            wgcp            phiop
+                             wb           wp            ws            wgcp            phiop
+                             eps_Ev       eps_Ev        neml2_strain  V'
+        neml2_inputs = '     forces/T     forces/tt     old_forces/tt old_state/alpha old_state/phis
+                             state/wb     state/wp      state/ws      state/wgcp      state/phiop
+                             old_state/wb old_state/wp  old_state/ws  old_state/wgcp  old_state/phiop
+                             state/Ev     old_state/Ev  forces/eps    old_state/V'
 
-        moose_output_types = 'MATERIAL MATERIAL MATERIAL  MATERIAL
-                              MATERIAL MATERIAL MATERIAL  MATERIAL    MATERIAL
-                              MATERIAL MATERIAL MATERIAL  MATERIAL
-                              MATERIAL MATERIAL MATERIAL  MATERIAL
-                              MATERIAL MATERIAL MATERIAL  MATERIAL    MATERIAL
-                              MATERIAL'
-        moose_outputs = '     mp       mb       mg        ms
-                              wp       wb       ws        alpha       alphadot
-                              vp       vb       vv        vs
-                              Vp       Vb       Vv        Vs
-                              K        V        rho       cp          rhocp
-                              neml2_stress'
-        neml2_outputs = '     state/mp state/mb state/mg  state/ms
-                              state/wp state/wb state/ws  state/alpha state/alpha_dot
-                              state/vp state/vb state/vv  state/vs
-                              state/Vp state/Vb state/Vv  state/Vs
-                              state/K  state/V  state/rho state/cp    state/rhocp
-                              state/sigma'
+        moose_output_types = 'MATERIAL        MATERIAL   MATERIAL   MATERIAL     MATERIAL
+                              MATERIAL        MATERIAL   MATERIAL   MATERIAL     MATERIAL
+                              MATERIAL        MATERIAL   MATERIAL   MATERIAL
+                              MATERIAL        MATERIAL'
+        moose_outputs = '     wb              wp         ws         wgcp         phiop
+                              phib            phip       phis       phigcp       alpha
+                              alpha_dot       K          V          rhocp
+                              neml2_stress    eps_Ev'
+        neml2_outputs = '     state/wb        state/wp   state/ws   state/wgcp   state/phiop
+                              state/phib      state/phip state/phis state/phigcp state/alpha
+                              state/alpha_dot state/K    state/V    state/rhocp
+                              state/sigma     state/Ev'
 
         moose_derivative_types = 'MATERIAL                  MATERIAL              MATERIAL
                                   MATERIAL'
@@ -166,8 +163,8 @@ g = 0.0
         neml2_derivatives = '     state/alpha_dot forces/T; state/rhocp forces/T; state/K forces/T;
                                   state/sigma forces/eps'
 
-        initialize_outputs = '      mp  mb  mg  ms  alpha  Vv'
-        initialize_output_values = 'mp0 mb0 mg0 ms0 alpha0 Vv0'
+        initialize_outputs = '      wp  wb  wgcp  ws  alpha  phis  phiop  V eps_Ev'
+        initialize_output_values = 'wp0 wb0 wgcp0 ws0 alpha0 phis0 phiop0 V0 eps_Ev0'
     []
 []
 
@@ -189,8 +186,8 @@ g = 0.0
 [Materials]
     [init_mat]
         type = GenericConstantMaterial
-        prop_names = 'mp0 mb0 mg0 ms0 alpha0 Vv0'
-        prop_values = '${mp0} ${mb0} ${mg0} ${ms0} ${alpha0} ${Vv0}'
+        prop_names = 'wp0 wb0 wgcp0 ws0 alpha0 phis0 phiop0 V0 eps_Ev0'
+        prop_values = '${wp0} ${wb0} ${wgcp0} ${ws0} ${alpha0} ${phis0} ${phiop0} ${V0} 0.0'
     []
     [convert_strain]
         type = RankTwoTensorToSymmetricRankTwoTensor
@@ -234,8 +231,16 @@ g = 0.0
         use_displaced_mesh = true
     []
     [maxdispx]
-        type = NodalMaxValue
+        type = NodalExtremeValue
         variable = disp_x
+    []
+    [volume_eigenstrain]
+        type = ElementAverageMaterialProperty
+        mat_prop = eps_Ev
+    []
+    [wb]
+        type = ElementAverageMaterialProperty
+        mat_prop = wb
     []
 []
 
@@ -292,7 +297,7 @@ g = 0.0
     nl_abs_tol = 1e-8
 
     end_time = ${total_time}
-    dtmax = '${fparse 2*dt}'
+    dtmax = '${fparse 10*dt}'
 
     [TimeStepper]
         type = IterationAdaptiveDT

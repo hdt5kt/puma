@@ -55,10 +55,9 @@ for i in range(len(exp_dat_list)):
     )
 
 data = pd.read_csv(filename)
-total_mass = data["mb"][1] + data["mp"][1] + data["mg"][1] + data["ms"][1]
 ax.plot(
     data["temp"][1:],
-    (data["ms"][1:] + data["mb"][1:]) / total_mass,
+    (data["ws"][1:] + data["wb"][1:]),
     color="black",
     label="kinetic model",
 )

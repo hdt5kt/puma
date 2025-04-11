@@ -6,8 +6,8 @@ import torch
 import os
 
 ## Input
-basefolder = "diff_time_heat_v4/"
-plotfolder = "plot_diff_time_heat_v4"
+basefolder = "example_1D/"
+plotfolder = "plot_example_1D"
 
 if not os.path.isdir(plotfolder):
     os.mkdir(plotfolder)
@@ -29,7 +29,7 @@ sm = cm.ScalarMappable(norm=norm, cmap="rainbow")
 ### Main ---------------------------------------------------------------------
 
 id = ["temp_mass", "volume_fraction"]
-idlist = [["T", "ws", "wp", "wb"], ["vv", "vs", "vb", "V"]]
+idlist = [["T", "ws", "wp", "wb"], ["phiop", "phis", "phib", "phigcp"]]
 idy = [
     [
         "temperature (K)",
@@ -38,10 +38,10 @@ idy = [
         "binder weight fraction",
     ],
     [
-        "void volume fraction",
+        "open pore volume fraction",
         "solid volume fraction",
         "binder volume fraction",
-        "total volume",
+        "close pore volume fraction",
     ],
 ]
 

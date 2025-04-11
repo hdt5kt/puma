@@ -7,7 +7,6 @@ import torch
 ## Input
 filename = "solution1/out.csv"
 tscale = 60  # seconds to xxx
-l_c = 100e-4  # cm
 
 tscale = 60  # division from seconds
 
@@ -43,26 +42,27 @@ fig.set_size_inches(figsize)
 
 data = pd.read_csv(filename)
 
-ax[0].plot(data["temp"][1:], data["ms"][1:], label="char", color="red")
-ax[0].plot(data["temp"][1:], data["mp"][1:], label="SiC", color="blue")
-ax[0].plot(data["temp"][1:], data["mb"][1:], label="PR", color="black")
-ax[0].plot(data["temp"][1:], data["mg"][1:], label="gas", color="purple")
-ax[0].set(ylabel="mass (kg)")
-ax[0].set_ylim((-1, 15))
+ax[0].plot(data["temp"][1:], data["ws"][1:], label="char", color="red")
+ax[0].plot(data["temp"][1:], data["wp"][1:], label="SiC", color="blue")
+ax[0].plot(data["temp"][1:], data["wb"][1:], label="PR", color="black")
+ax[0].plot(data["temp"][1:], data["wgcp"][1:], label="close pore gas", color="purple")
+ax[0].set(ylabel="weight fraction")
+# ax[0].set_ylim((-1, 15))
 # ax[0].legend(loc="best", frameon=False)
 
-ax[1].plot(data["temp"][1:], data["vs"][1:], label="char", color="red")
-ax[1].plot(data["temp"][1:], data["vp"][1:], label="SiC", color="blue")
-ax[1].plot(data["temp"][1:], data["vb"][1:], label="PR", color="black")
-ax[1].plot(data["temp"][1:], data["vv"][1:], label="void", color="purple")
+ax[1].plot(data["temp"][1:], data["phis"][1:], label="char", color="red")
+ax[1].plot(data["temp"][1:], data["phip"][1:], label="SiC", color="blue")
+ax[1].plot(data["temp"][1:], data["phib"][1:], label="PR", color="black")
+ax[1].plot(data["temp"][1:], data["phiop"][1:], label="void", color="purple")
+ax[1].plot(data["temp"][1:], data["phigcp"][1:], label="void", color="green")
 # ax[1].legend(loc="upper right", frameon=False)
-ax[1].set_ylim((-0.05, 0.85))
+# ax[1].set_ylim((-0.05, 0.85))
 ax[1].set(ylabel="volume fraction")
 
 ax[2].plot(data["temp"][1:], data["V"][1:], color="black")
 ax[2].set(ylabel="element volume ($m^3$)")
 ax[2].set(xlabel="Temperature (K)")
-ax[2].set_ylim((0.01, 0.045))
+# ax[2].set_ylim((0.01, 0.045))
 
 
 fig.tight_layout(pad=0.6)

@@ -1,96 +1,38 @@
-############### Input ################
+############### Calculations ################
 # Simulation parameters
 dt = 5
-nx = 50
-ny = 50
-xmax = 0.1
 
-# denisty kgm-3
-rho_s = 2100
-rho_b = 1250 # 1.2 and 1.4
-rho_p = 3210
-
-# heat capacity Jkg-1K-1
-cp_s = 1592
-cp_b = 1200
-cp_g = 1e-4
-cp_p = 750
-
-# thermal conductivity W/m-1K-1
-k_s = 1.5
-k_b = 0.279
-k_g = 1e-4
-k_p = 380 #120 and 490
-
-# reaction type
-Ea = 41220 # 177820 # J mol-1
-A = 1.24e4 # 5.24e12 # s-1
-R = 8.31446261815324 # JK-1mol-1
-hrp = 1.58e6 # J kg-1
-
-Y = 0.575
+alpha0 = '${fparse 1/(1-Y)}' # 1/(1-Y)
 invYm1 = '${fparse 1-1/Y}' # 1-1/Y
 
-order = 1.0
-order_k = 0.00015
-factor = 1.0
-
-# models
-cp_to_wg_relation = 0.001
-op_to_solid_relation = 0.1
-rho_g = 13 #kgm-3
-
-# initial condition
-ms0 = 1
-mb0 = 10
-mp0 = 3
-mg0 = 0.001
-mgcp0 = '${fparse mg0}'
-phiop0 = 0.001 #void fraction
-T0 = 300 #K
-
-# calculations
-Mref = '${fparse ms0 + mb0 + mp0 + mg0}'
-V0 = '${fparse (ms0/rho_s + mb0/rho_b + mp0/rho_p + mgcp0/rho_g)/(1 - phiop0)}'
-wb0 = '${fparse mb0/Mref}'
-ws0 = '${fparse ms0/Mref}'
-wp0 = '${fparse mp0/Mref}'
-wgcp0 = '${fparse mgcp0/Mref}'
-phis0 = '${fparse ws0*Mref/(rho_s*V0)}'
-alpha0 = '${fparse 1/(1-Y)}' # 1/(1-Y)
-
-Tmax = 1000 #K
-dTdt = 20 #Kmin-1 heating rate
 t_ramp = '${fparse (Tmax-T0)/dTdt*60}' #s
-t_hold = 3 #hrs
 theat = '${fparse t_ramp+t_hold*3600}'
-tcool = 3 #hrs
 dTdtcool = '${fparse (Tmax-T0)/(tcool*3600)}' #Ks-1
-
 total_time = '${fparse theat + tcool*3600}'
-
-#### stress-strain ####
-E = 400e9
-mu = 0.3
-
-# thermal expansion coefficients (degree-1)
-Tref = 300 #K
-g = 4e-6
-
-#boundary conditions
-htc = 200 #Wm-2K assume air doesnt move much
 
 [GlobalParams]
     displacements = 'disp_x disp_y'
 []
 
 [Mesh]
-    type = GeneratedMesh
-    dim = 2
-    nx = '${nx}'
-    ny = '${ny}'
-    xmax = '${xmax}'
-    ymax = '${xmax}'
+    [mesh0]
+        type = FileMeshGenerator
+        file = '${meshfile}'
+    []
+    [rollingnode]
+        type = BoundingBoxNodeSetGenerator
+        bottom_left = '${fparse xroll-0.00000001} ${fparse yroll-0.00000001} ${fparse zroll-0.00000001}'
+        input = mesh0
+        new_boundary = 'roll'
+        top_right = '${fparse xroll+0.00000001} ${fparse yroll+0.00000001} ${fparse zroll+0.00000001}'
+    []
+    [fixnode]
+        type = BoundingBoxNodeSetGenerator
+        bottom_left = '${fparse xfix-0.00000001} ${fparse yfix-0.00000001} ${fparse zfix-0.00000001}'
+        input = rollingnode
+        new_boundary = 'fix'
+        top_right = '${fparse xfix+0.00000001} ${fparse yfix+0.00000001} ${fparse zfix+0.00000001}'
+    []
 []
 
 [Variables]
@@ -144,12 +86,12 @@ htc = 200 #Wm-2K assume air doesnt move much
     cli_args = 'rho_s=${rho_s} rho_b=${rho_b} rho_g=${rho_g} rho_p=${rho_p} Mref=${Mref}
                 rho_sm1M=${fparse Mref/rho_s} rho_bm1M=${fparse Mref/rho_b}
                 rho_gm1M=${fparse Mref/rho_g} rho_pm1M=${fparse Mref/rho_p}
-                cp_s=${cp_s} cp_b=${cp_b} cp_g=${cp_g} cp_p=${cp_p}
-                k_s=${k_s} k_b=${k_b} k_g=${k_g} k_p=${k_p}
+                cp_s=${cp_s} cp_b=${cp_b} cp_p=${cp_p}
+                k_s=${k_s} k_b=${k_b} k_p=${k_p}
                 Ea=${Ea} A=${A} R=${R} Y=${Y} invYm1=${invYm1}
                 order=${order} order_k=${order_k} hrp=${hrp}
                 cp_to_wg_relation=${cp_to_wg_relation} op_to_solid_relation=${op_to_solid_relation}
-                ws0=${ws0} wb0=${wb0} alpha0=${alpha0} Tref=${Tref} E=${E} g=${g} mu=${mu}'
+                alpha0=${alpha0} Tref=${Tref} E=${E} g=${g} mu=${mu}'
     [all]
         model = 'model'
         verbose = true
@@ -158,28 +100,32 @@ htc = 200 #Wm-2K assume air doesnt move much
         moose_input_types = 'VARIABLE     POSTPROCESSOR POSTPROCESSOR MATERIAL        MATERIAL
                              MATERIAL     MATERIAL      MATERIAL      MATERIAL        MATERIAL
                              MATERIAL     MATERIAL      MATERIAL      MATERIAL        MATERIAL
-                             MATERIAL     MATERIAL      MATERIAL      MATERIAL'
+                             MATERIAL' #     MATERIAL      MATERIAL      MATERIAL'
         moose_inputs = '     T            time          time          alpha           phis
                              wb           wp            ws            wgcp            phiop
                              wb           wp            ws            wgcp            phiop
-                             eps_Ev       eps_Ev        neml2_strain  V'
+                             neml2_strain' # eps_Ev        eps_Ev        Vol'
         neml2_inputs = '     forces/T     forces/tt     old_forces/tt old_state/alpha old_state/phis
                              state/wb     state/wp      state/ws      state/wgcp      state/phiop
                              old_state/wb old_state/wp  old_state/ws  old_state/wgcp  old_state/phiop
-                             state/Ev     old_state/Ev  forces/eps    old_state/V'
+                             forces/eps' #   state/Ev      old_state/Ev    old_state/V'
+
+        moose_parameter_types = 'MATERIAL    MATERIAL    MATERIAL       MATERIAL       MATERIAL'
+        moose_parameters = '     wb0         ws0         wb0            ws0            Vref0'
+        neml2_parameters = '     amount_wb0  amount_ws0  amount_new_wb0 amount_new_ws0 volume_strain_V0'
 
         moose_output_types = 'MATERIAL        MATERIAL   MATERIAL   MATERIAL     MATERIAL
                               MATERIAL        MATERIAL   MATERIAL   MATERIAL     MATERIAL
                               MATERIAL        MATERIAL   MATERIAL   MATERIAL
-                              MATERIAL        MATERIAL'
+                              MATERIAL  ' #     MATERIAL'
         moose_outputs = '     wb              wp         ws         wgcp         phiop
                               phib            phip       phis       phigcp       alpha
-                              alphadot       K          V          rhocp
-                              neml2_stress    eps_Ev'
+                              alphadot        K          Vol          rhocp
+                              neml2_stress ' #   eps_Ev'
         neml2_outputs = '     state/wb        state/wp   state/ws   state/wgcp   state/phiop
                               state/phib      state/phip state/phis state/phigcp state/alpha
                               state/alpha_dot state/K    state/V    state/rhocp
-                              state/sigma     state/Ev'
+                              state/sigma' #    state/Ev'
 
         moose_derivative_types = 'MATERIAL                  MATERIAL              MATERIAL
                                   MATERIAL'
@@ -188,16 +134,16 @@ htc = 200 #Wm-2K assume air doesnt move much
         neml2_derivatives = '     state/alpha_dot forces/T; state/rhocp forces/T; state/K forces/T;
                                   state/sigma forces/eps'
 
-        initialize_outputs = '      wp  wb  wgcp  ws  alpha  phis  phiop  V eps_Ev'
-        initialize_output_values = 'wp0 wb0 wgcp0 ws0 alpha0 phis0 phiop0 V0 eps_Ev0'
+        initialize_outputs = '      wb  wp  ws  wgcp  phis  alpha  phiop ' # Vol     eps_Ev'
+        initialize_output_values = 'wb0 wp0 ws0 wgcp0 phis0 alpha0 phiop0 ' # Vref0  eps_Ev0'
     []
 []
 
 [Materials]
-    [init_mat]
+    [init_alpha]
         type = GenericConstantMaterial
-        prop_names = 'wp0 wb0 wgcp0 ws0 alpha0 phis0 phiop0 V0 eps_Ev0'
-        prop_values = '${wp0} ${wb0} ${wgcp0} ${ws0} ${alpha0} ${phis0} ${phiop0} ${V0} 0.0'
+        prop_names = 'alpha0 phiop0'
+        prop_values = '${alpha0} 0.0'
     []
     [convert_strain]
         type = RankTwoTensorToSymmetricRankTwoTensor
@@ -217,7 +163,7 @@ htc = 200 #Wm-2K assume air doesnt move much
         constant_names = 'htc t_ramp dTdt theat Tmax dTdtcool tcool'
         constant_expressions = '${htc} ${t_ramp} ${dTdt} ${theat} ${Tmax} ${dTdtcool} ${tcool}'
         postprocessor_names = 'time'
-        boundary = 'top right'
+        boundary = 'open'
     []
 []
 
@@ -225,6 +171,14 @@ htc = 200 #Wm-2K assume air doesnt move much
     [time]
         type = TimePostprocessor
         execute_on = 'INITIAL TIMESTEP_BEGIN'
+    []
+[]
+
+[VectorPostprocessors]
+    [composition_info]
+        type = ElementMaterialSampler
+        property = 'phiop phigcp phis phip phib ws wp wb wgcp vonmises_cauchy_stress'
+        execute_on = 'FINAL'
     []
 []
 
@@ -310,13 +264,14 @@ htc = 200 #Wm-2K assume air doesnt move much
             execute_on = 'INITIAL TIMESTEP_END'
         []
     []
-[]
-
-[ICs]
-    [TIC]
-        type = ConstantIC
-        variable = T
-        value = ${T0}
+    [Vol]
+        order = CONSTANT
+        family = MONOMIAL
+        [AuxKernel]
+            type = MaterialRealAux
+            property = Vol
+            execute_on = 'INITIAL TIMESTEP_END'
+        []
     []
 []
 
@@ -333,19 +288,25 @@ htc = 200 #Wm-2K assume air doesnt move much
     [boundary]
         type = ADMatNeumannBC
         boundary_material = q_boundary
-        boundary = 'top right'
+        boundary = 'open'
         variable = T
         value = -1
     []
-    [roller_left]
+    [roller_bot]
         type = DirichletBC
-        boundary = left
+        boundary = 'roll'
+        value = 0.0
+        variable = disp_y
+    []
+    [fix_point_x]
+        type = DirichletBC
+        boundary = 'fix'
         value = 0.0
         variable = disp_x
     []
-    [roller_bot]
+    [fix_point_y]
         type = DirichletBC
-        boundary = bottom
+        boundary = 'fix'
         value = 0.0
         variable = disp_y
     []
@@ -377,13 +338,21 @@ htc = 200 #Wm-2K assume air doesnt move much
 
 [Outputs]
     exodus = true
+    file_base = '${save_folder}/out_cycle${cycle}'
+    # console = true
     [console]
         type = Console
         execute_postprocessors_on = 'NONE'
+        # execute_on = 'NONE'
+        # execute_input_on = 'NONE'
+        # execute_reporters_on = 'NONE'
+        # outlier_variable_norms = False
     []
     [csv]
         type = CSV
-        file_base = 'heating_and_cooling_2/out'
+        file_base = '${save_folder}/out_cycle${cycle}'
+        execute_on = 'FINAL'
+        create_final_symlink = true
     []
     print_linear_residuals = false
 []

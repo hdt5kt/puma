@@ -7,8 +7,8 @@ import torch
 import os
 
 ## Input
-basefolder = "diff_time_heat_v4/"
-plotfolder = "plot_diff_time_heat_v4/sequence"
+basefolder = "example_1D/"
+plotfolder = "plot_example_1D/sequence"
 
 if not os.path.isdir(plotfolder):
     os.mkdir(plotfolder)
@@ -35,8 +35,8 @@ sm = cm.ScalarMappable(norm=norm, cmap="rainbow")
 ### Main ---------------------------------------------------------------------
 
 id = ["temp_mass"]
-idlist = [["T", "wb", "ws", "V"]]
-idy = [["temperature (K)", "weight fraction", "volume ($m^3$)"]]
+idlist = [["T", "wb", "ws", "phiop"]]
+idy = [["temperature (K)", "weight fraction", "open pore volume fraction"]]
 
 
 for keyid in range(len(id)):
