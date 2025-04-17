@@ -33,8 +33,8 @@ def generate_initial_conditions(
     assert min_binder >= 0 and min_binder <= 1
     assert max_binder >= 0 and max_binder <= 1
 
-    beta_beta_shift_binder = min_binder
-    beta_beta_scale_binder = max_binder - min_binder
+    beta_shift_binder = min_binder
+    beta_scale_binder = max_binder - min_binder
 
     # import the desirable mesh
     mesh = meshio.read(meshfile)
@@ -52,8 +52,8 @@ def generate_initial_conditions(
         norm_var=1,
         b=beta_b_binder,
         a=beta_a_binder,
-        beta_shift=beta_beta_shift_binder,
-        beta_scale=beta_beta_scale_binder,
+        beta_shift=beta_shift_binder,
+        beta_scale=beta_scale_binder,
     )
 
     if mode == "mass_fraction":

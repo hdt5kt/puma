@@ -17,7 +17,6 @@ protected:
   virtual Real computeQpOffDiagJacobian(unsigned int jvar) override;
 
   unsigned int _P_id;
-  const VariableValue & _P;
   const VariableGradient & _grad_P;
   MooseVariable & _P_var;
   const VariablePhiGradient & _P_grad_phi;

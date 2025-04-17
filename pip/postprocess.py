@@ -73,7 +73,7 @@ def trim_and_plot(axis, data, removeid, ls="--", mk="x", col="k", maxmin=False):
     else:
         axis.plot(
             np.linspace(1, i, i),
-            data[:, 3],
+            data[:, 1],
             linestyle=ls,
             marker=mk,
             color=col,
@@ -146,7 +146,7 @@ ax[1].set_xlim((0, i + 1))
 
 # stress
 vonmises = trim_and_plot(ax[2], vonmises / E, i, col="k", mk="x", maxmin=True)
-ax[2].set_ylabel("von_mises_stress/E (kg)")
+ax[2].set_ylabel("von_mises_stress/E")
 ax[2].set_xlabel("PIP cycles #")
 ax[2].set_xlim((0, i + 1))
 

@@ -19,9 +19,7 @@ PumaCoupledMaterialPressure::validParams()
   params.addRequiredParam<MaterialPropertyName>(
       "coupled_pressure_derivative",
       "Derivative of the material pressure w.r.t. the species concentration");
-  params.addRequiredParam<MaterialPropertyName>(
-      "material_pressure_derivative",
-      "Derivative of the material pressure w.r.t. the coupled variable (pressure)");
+
   return params;
 }
 
@@ -30,10 +28,9 @@ PumaCoupledMaterialPressure::PumaCoupledMaterialPressure(const InputParameters &
     _alpha_id(coupled("flow_concentration")),
     _alpha(coupledValue("flow_concentration")),
     _alpha_var(*getVar("flow_concentration", 0)),
-    _alpha_phi(_assembly.phi(_alpha_var)),
+    _alpha_phi(_alpha_var.phi()),
     _Pc(getMaterialProperty<Real>("material_pressure")),
-    _dPc_dalpha(getMaterialProperty<Real>("coupled_pressure_derivative")),
-    _dPc_dP(getMaterialProperty<Real>("material_pressure_derivative"))
+    _dPc_dalpha(getMaterialProperty<Real>("coupled_pressure_derivative"))
 {
 }
 Real
@@ -45,7 +42,7 @@ PumaCoupledMaterialPressure::computeQpResidual()
 Real
 PumaCoupledMaterialPressure::computeQpJacobian()
 {
-  return _test[_i][_qp] * (_phi[_j][_qp] - _dPc_dP[_qp]);
+  return _test[_i][_qp] * _phi[_j][_qp];
 }
 
 Real

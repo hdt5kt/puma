@@ -25,5 +25,4 @@ protected:
 
   const MaterialProperty<Real> & _Pc;
   const MaterialProperty<Real> & _dPc_dalpha;
-  const MaterialProperty<Real> & _dPc_dP;
 };

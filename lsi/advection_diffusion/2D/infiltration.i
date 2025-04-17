@@ -25,15 +25,27 @@ rho_SiC = 3.21
 rho_C = 2.26
 
 # material property
-D_LP = 1e-12 # cm2 s-1
-l_c = 1e-3 # cm
+D_LP = 2.65e-4 # cm2 s-1
+l_c = 1.0 # cm
+
+brooks_corey_threshold = 1e7 #Pa
+capillary_pressure_power = 3
+phi_L_residual = 0.0
+
+permeability_power = 3
+
+# solid permeability
+kk_Si = 2e-5 #  2e-5
+
+# liquid viscosity
+mu_Si = 10
 
 # chemical reaction constant
 k_C = 1.0
 k_SiC = 1.0
 
 # macroscopic property
-D_macro = 0.01 #cm2 s-1
+D_macro = 0.001 #cm2 s-1
 
 # initial condition
 phi0_SiC = 0.05
@@ -41,6 +53,7 @@ phi0_SiC = 0.05
 h0_pool = 15.0 #cm
 
 ## Calculations
+advec_constant = '${fparse rho_Si/ (M_Si * mu_Si)}'
 D_bar = '${fparse D_LP/(l_c^2)}'
 
 omega_C = '${fparse M_C/rho_C}'
@@ -151,6 +164,33 @@ alpha0_SiC = '${fparse phi0_SiC/omega_SiC}'
             execute_on = 'INITIAL TIMESTEP_END'
         []
     []
+    [dPcdalpha]
+        order = CONSTANT
+        family = MONOMIAL
+        [AuxKernel]
+            type = MaterialRealAux
+            property = dPcdalpha
+            execute_on = 'INITIAL TIMESTEP_END'
+        []
+    []
+    [permeability]
+        order = CONSTANT
+        family = MONOMIAL
+        [AuxKernel]
+            type = MaterialRealAux
+            property = permeability
+            execute_on = 'INITIAL TIMESTEP_END'
+        []
+    []
+    [Dtotal]
+        order = CONSTANT
+        family = MONOMIAL
+        [AuxKernel]
+            type = MaterialRealAux
+            property = Dtotal
+            execute_on = 'INITIAL TIMESTEP_END'
+        []
+    []
 []
 
 [Kernels]
@@ -159,9 +199,10 @@ alpha0_SiC = '${fparse phi0_SiC/omega_SiC}'
         variable = alpha
     []
     [diffusion]
-        type = MatDiffusion
+        type = PumaDiffusion
+        diffusivity_derivative = neml2_dDdalpha
         variable = alpha
-        diffusivity = D
+        diffusivity = Dtotal
     []
     [reaction]
         type = MaterialSource
@@ -174,29 +215,41 @@ alpha0_SiC = '${fparse phi0_SiC/omega_SiC}'
 
 [NEML2]
     input = 'neml2/Si_SiC_C.i'
-    cli_args = 'D=${D_bar} omega_Si=${omega_Si} oSiCm1=${oSiCm1} oCm1=${oCm1} chem_ratio=${chem_ratio} chem_P=${k_SiC}'
+    cli_args = 'D=${D_bar} omega_Si=${omega_Si} oSiCm1=${oSiCm1} oCm1=${oCm1}
+                chem_ratio=${chem_ratio} chem_P=${k_SiC} kk_Si=${kk_Si}
+                capillary_pressure_power=${capillary_pressure_power}
+                brooks_corey_threshold=${brooks_corey_threshold}
+                phi_L_residual=${phi_L_residual}
+                F_diffusion=${D_macro} advec_constant=${advec_constant}
+                permeability_power=${permeability_power}'
     [all]
         model = 'model'
         verbose = true
         device = 'cpu'
 
         moose_input_types = 'VARIABLE          POSTPROCESSOR POSTPROCESSOR MATERIAL
-                             MATERIAL          MATERIAL         MATERIAL'
+                             MATERIAL          MATERIAL      MATERIAL'
         moose_inputs = '     alpha             time          time          alpha_SiC
-                             alpha_C           phi_SiC          phi_C'
+                             alpha_C           phi_SiC       phi_C'
         neml2_inputs = '     forces/alpha      forces/t      old_forces/t  old_state/alpha_P
-                             old_state/alpha_S state/phi_P      state/phi_S'
+                             old_state/alpha_S state/phi_P   state/phi_S'
 
-        moose_output_types = 'MATERIAL        MATERIAL      MATERIAL      MATERIAL    MATERIAL    MATERIAL'
-        moose_outputs = '     alpha_rate      alpha_SiC     alpha_C       phi_Si      phi_SiC    phi_C'
-        neml2_outputs = '     state/alpha_dot state/alpha_P state/alpha_S state/phi_L state/phi_P state/phi_S'
+        moose_output_types = 'MATERIAL        MATERIAL        MATERIAL      MATERIAL         MATERIAL    MATERIAL
+                              MATERIAL        MATERIAL        MATERIAL      MATERIAL'
+        moose_outputs = '     alpha_rate      alpha_SiC       alpha_C       phi_Si           phi_SiC     phi_C
+                              Pc              dPcdalpha       permeability  Dtotal'
+        neml2_outputs = '     state/alpha_dot state/alpha_P   state/alpha_S state/phi_L      state/phi_P state/phi_S
+                              state/Pc        state/dPcdalpha state/perm    state/Ftotal'
 
         moose_derivative_types = 'MATERIAL                      MATERIAL
+                                  MATERIAL                      MATERIAL
                                   MATERIAL                      MATERIAL'
         moose_derivatives = '     neml2_daDotdalpha             neml2_dphiCdalpha
-                                  neml2_dphiSidalpha            neml2_dphiSiCdalpha'
+                                  neml2_dphiSidalpha            neml2_dphiSiCdalpha
+                                  neml2_dPcdalpha               neml2_dDdalpha'
         neml2_derivatives = '     state/alpha_dot forces/alpha; state/phi_S forces/alpha;
-                                  state/phi_L forces/alpha;     state/phi_P forces/alpha'
+                                  state/phi_L forces/alpha;     state/phi_P forces/alpha;
+                                  state/Pc forces/alpha;        state/Ftotal forces/alpha'
 
         initialize_outputs = '      alpha_SiC alpha_C phi_SiC  phi_C'
         initialize_output_values = 'aSiC0     aC0     phi0_SiC phi0_C'
@@ -206,8 +259,8 @@ alpha0_SiC = '${fparse phi0_SiC/omega_SiC}'
 [Materials]
     [init_mat]
         type = GenericConstantMaterial
-        prop_names = ' aSiC0         phi0_SiC    D'
-        prop_values = '${alpha0_SiC} ${phi0_SiC} ${D_macro}'
+        prop_names = ' aSiC0         phi0_SiC    '
+        prop_values = '${alpha0_SiC} ${phi0_SiC}'
     []
     [init_phi0C]
         type = GenericFunctionMaterial
@@ -228,7 +281,7 @@ alpha0_SiC = '${fparse phi0_SiC/omega_SiC}'
     []
     [inlet_rate]
         type = SideDiffusiveFluxIntegral
-        diffusivity = D
+        diffusivity = Dtotal
         variable = alpha
         boundary = 'core_sides'
         execute_on = 'TIMESTEP_END'

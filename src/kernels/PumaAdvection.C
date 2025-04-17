@@ -31,10 +31,9 @@ PumaAdvection::validParams()
 PumaAdvection::PumaAdvection(const InputParameters & parameters)
   : Kernel(parameters),
     _P_id(coupled("pressure")),
-    _P(coupledValue("pressure")),
     _grad_P(coupledGradient("pressure")),
     _P_var(*getVar("pressure", 0)),
-    _P_grad_phi(_assembly.gradPhi(_P_var)),
+    _P_grad_phi(_P_var.gradPhi()),
     _rho(getMaterialProperty<Real>("density")),
     _nu(getMaterialProperty<Real>("viscosity")),
     _k(getMaterialProperty<Real>("permeability")),
@@ -46,21 +45,21 @@ PumaAdvection::PumaAdvection(const InputParameters & parameters)
 Real
 PumaAdvection::computeQpResidual()
 {
-  return 0.0; // _test[_i][_qp] * _coeff * _rho[_qp] / _nu[_qp] * _k[_qp] * _grad_P[_qp];
+  return _grad_test[_i][_qp] * _coeff * _rho[_qp] / _nu[_qp] * _k[_qp] * _grad_P[_qp];
 }
 
 Real
 PumaAdvection::computeQpJacobian()
 {
-  return 0.0; //_test[_i][_qp] * _coeff * _rho[_qp] / _nu[_qp] * _dk_dalpha[_qp] * _phi[_j][_qp] *
-              //_grad_P[_qp];
+  return _grad_test[_i][_qp] * _coeff * _rho[_qp] / _nu[_qp] * _dk_dalpha[_qp] * _phi[_j][_qp] *
+         _grad_P[_qp];
 }
 
 Real
 PumaAdvection::computeQpOffDiagJacobian(unsigned int jvar)
 {
-  // if (jvar == _P_id)
-  //   return _coeff * _test[_i][_qp] * _rho[_qp] / _nu[_qp] * _k[_qp] * _P_grad_phi[_j][_qp];
+  if (jvar == _P_id)
+    return _coeff * _grad_test[_i][_qp] * _rho[_qp] / _nu[_qp] * _k[_qp] * _P_grad_phi[_j][_qp];
 
   return 0.0;
 }
