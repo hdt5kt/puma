@@ -22,16 +22,15 @@ protected:
   const MaterialProperty<Real> & _phi_s;
   const MaterialProperty<Real> & _dphi_s;
 
-  /// Volume fraction of the liquid phase (and its derivative w.r.t. the species concentration)
-  const MaterialProperty<Real> & _phi_l;
-  const MaterialProperty<Real> & _dphi_l;
-
   /// Volume fraction of the product phase (and its derivative w.r.t. the species concentration)
   const MaterialProperty<Real> & _phi_p;
   const MaterialProperty<Real> & _dphi_p;
 
   /// Sharpness of the heaviside function
   const Real _sharpness;
+
+  /// Non-liquid volume fraction when transition to zero flux begins
+  const Real _transistion;
 
   /// The suction flux from the wake into the solid
   const Function & _inlet_flux;
