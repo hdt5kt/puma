@@ -72,17 +72,13 @@ LevelsetMaterialization::residualSetup()
   if (processor_id() != 0)
     return;
   std::vector<Real> r{_V_dot};
-  // std::cout << "Vdot = " << _V_dot << std::endl;
+
   addResiduals(_assembly, r, _kappa_var_ptr->dofIndices(), _kappa_var_ptr->scalingFactor());
 }
 
 Real
 LevelsetMaterialization::computeScalarQpResidual()
 {
-  // std::cout << "h    = " << _kappa[0] << std::endl;
-  // std::cout << "dMdL = " << _dM_dL[0] << std::endl;
-  // std::cout << "dLdh = " << _dL_dh[0] << std::endl;
-  // std::cout << "hdot = " << _h_dot[0] << std::endl;
   return -_dM_dL[_qp] * _dL_dh[_qp] * _h_dot[0];
 }
 
