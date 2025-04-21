@@ -1,9 +1,9 @@
 ############### Input ################
 # Simulation parameters
 dt = 0.1
-total_time = 3600
-t_ramp = ${total_time}
 nx = 1
+
+# need to provide dTdt in terms of deg/minutes, Ea, and A from pyrolysis reaction types
 
 # denisty kgm-3
 rho_s = 2100
@@ -23,16 +23,15 @@ k_g = 1e-4
 k_p = 380 #120 and 490
 
 # reaction type
-Ea = 41220 # 177820 # J mol-1
-A = 1.24e4 # 5.24e12 # s-1
+# Ea = 41220 # 177820 # J mol-1
+# A = 1.24e4 # 5.24e12 # s-1
 R = 8.31446261815324 # JK-1mol-1
-#hrp = 1.58e6 # J kg-1
 
-Y = 0.575
+Y = 0.56
 invYm1 = '${fparse 1-1/Y}' # 1-1/Y
 
-order = 1.0
-order_k = 0.00015
+order = 7.0
+order_k = 1.0
 
 # models
 cp_to_wg_relation = 0.001
@@ -61,8 +60,9 @@ alpha0 = '${fparse 1/(1-Y)}' # 1/(1-Y)
 
 xmax = '${fparse V0/nx}'
 
-Tmax = 1500 #K
-#Tref = 273 #K
+Tmax = 1500
+total_time = '${fparse floor((Tmax -T0) / (dTdt/60))}' #s
+t_ramp = ${total_time}
 
 [Mesh]
     type = GeneratedMesh
@@ -261,7 +261,7 @@ Tmax = 1500 #K
     console = false
     [csv]
         type = CSV
-        file_base = 'experiment_comp/out'
+        file_base = 'simulation/out_${num}'
     []
     print_linear_residuals = false
 []

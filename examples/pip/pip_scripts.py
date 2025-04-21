@@ -13,6 +13,7 @@ from generate_random_field import generate_initial_conditions
 pip_cycle_n = 10  # number of pip cycles
 save_folder = "main"
 corenum = 8  # number of cores used for simulation
+puma_run_file = "./../puma-opt"
 
 
 # rate of close pore relative to volume of produced solid
@@ -121,8 +122,6 @@ intial_condition = generate_initial_conditions(
 )
 
 num_file_data = len(intial_condition["z"])
-
-puma_run_file = "./../puma-opt"
 
 
 print("\n")

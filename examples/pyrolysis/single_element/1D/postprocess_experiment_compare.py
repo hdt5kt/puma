@@ -2,18 +2,33 @@ from matplotlib import pyplot as plt
 import pandas as pd
 import numpy as np
 import matplotlib.font_manager as fm
-from scipy import integrate
+import subprocess
 
-## Input
-filename = "experiment_comp/out.csv"
+## Experiment Input
 exp_dat_list = [
-    "experiment_comp/20degpermin_run1.csv",
-    "experiment_comp/20degpermin_run2.csv",
+    "experiment_comp/5degpermin_run1.csv",
+    "experiment_comp/10degpermin_run1.csv",
+    "experiment_comp/20degpermin_run3.csv",
 ]
+
+col = ["k", "b", "r", "r", "r"]
+shape = ["--", "--", "--", "--", "--"]
+label = ["5C/min", "10C/min", "20C/min", "20C/min", "20C/min"]
+
 tscale = 60  # seconds to xxx
 l_c = 100e-4  # cm
 
 tscale = 60  # division from seconds
+
+## Simulation Input
+heating_rate = [5, 10, 20]  # deg per min
+col_sim = ["k", "b", "r"]
+label_sim = ["5C/min", "10C/min", "20C/min"]
+run_simulation = True
+Ea = 216820  # J mol-1
+A = 1e14  # s-1
+corenum = 1  # number of cores used for simulation
+puma_run_file = "./../../../../puma-opt"
 
 ## Set up plot ------------------------------------------------------------
 fe = fm.FontEntry(
@@ -25,7 +40,7 @@ fm.fontManager.ttflist.insert(0, fe)
 ## Set up plot ------------------------------------------------------------
 font = {"family": "Arial"}
 fsize = 13
-figsize = (4.2, 3.4)
+figsize = (7.2, 4.4)
 lw = 1
 
 plt.rc("font", size=fsize)  # controls default text sizes
@@ -36,12 +51,40 @@ plt.rc("ytick", labelsize=fsize)  # fontsize of the tick labels
 plt.rc("legend", fontsize=fsize - 1)  # legend fontsize
 plt.rc("figure", titlesize=fsize)  # fontsize of the figure title
 
-
-## Main weight fraction ---------------------------------------------------------------------
-
 fig, ax = plt.subplots()
 fig.set_size_inches(figsize)
 
+## Simulation Main weight fraction ---------------------------------------------------------------------
+if run_simulation:
+    print("running simulation ...")
+    for i in range(len(heating_rate)):
+        subprocess.run(
+            [
+                "mpiexec",
+                "-n",
+                str(corenum),
+                puma_run_file,
+                "-i",
+                "TGA.i",
+                "dTdt={:.9f}".format(heating_rate[i]),
+                "Ea={:.9f}".format(Ea),
+                "A={:.9f}".format(A),
+                "num={}".format(i),
+            ]
+        )
+    print("finish running simulation")
+
+for i in range(len(heating_rate)):
+    filename = "simulation/out_" + str(i) + ".csv"
+    data = pd.read_csv(filename)
+    ax.plot(
+        data["temp"][1:],
+        (data["ws"][1:] + data["wb"][1:]),
+        color=col_sim[i],
+        label=label_sim[i],
+    )
+
+## Experiment Main weight fraction ---------------------------------------------------------------------
 for i in range(len(exp_dat_list)):
 
     exp_data = pd.read_csv(exp_dat_list[i])
@@ -49,66 +92,19 @@ for i in range(len(exp_dat_list)):
     ax.plot(
         exp_data["Temperature (degC)"] + 273,
         exp_weightloss,
-        "x",
-        label="experiment %d" % i,
-        markersize=1,
+        shape[i],
+        label=label[i],
+        ## markersize=1,
+        color=col[i],
     )
 
-data = pd.read_csv(filename)
-ax.plot(
-    data["temp"][1:],
-    (data["ws"][1:] + data["wb"][1:]),
-    color="black",
-    label="kinetic model",
-)
 ax.set(ylabel="weight fraction")
 ax.set(xlabel="Temperature (K)")
 ax.set_ylim((0.5, 1.05))
-ax.set_xlim((250, 1500))
+ax.set_xlim((400, 1000))
 
 
 ax.legend(loc="upper right", frameon=False)
 fig.tight_layout()  # pad=0.6)
 fig.savefig("experiment_fit.png")
-# plt.show()
-
-
-## Main Heat Flow ---------------------------------------------------------------------
-
-fig2, ax2 = plt.subplots()
-fig2.set_size_inches(figsize)
-
-time_cut = [1243, 1430]
-shift = [0, 0]  # [-4.5, -6.5]
-
-for i in range(len(exp_dat_list)):
-    exp_data = pd.read_csv(exp_dat_list[i])
-    heat_flow = exp_data["Heat Flow (mW)"]
-    # ax2.plot(exp_data["Temperature (degC)"] + 273, heat_flow)
-    ax2.plot(
-        exp_data["Time (min)"] * 60,
-        heat_flow / exp_data["Weight (mg)"][0] - shift[i],
-        label="experiment %d" % i,
-    )
-
-    heat_flow = (
-        integrate.trapezoid(
-            exp_data["Time (min)"][exp_data["Temperature (degC)"] < time_cut[i]] * 60,
-            exp_data["Heat Flow (mW)"][exp_data["Temperature (degC)"] < time_cut[i]]
-            - shift[i],
-        )
-        / exp_data["Weight (mg)"][0]
-    )
-    # print(heat_flow)
-
-ax2.set_xlim((0, 3000))
-ax2.set_ylim((-3, 1))
-
-ax2.set(ylabel="Heat Release ( J/(s-g) )")
-ax2.set(xlabel="Time (s)")
-
-ax2.legend(loc="upper right", frameon=False)
-fig2.tight_layout()  # pad=0.6)
-fig2.savefig("Heat flow.png")
-
-# plt.show()
+plt.show()
