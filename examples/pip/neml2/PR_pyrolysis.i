@@ -127,7 +127,7 @@
         rate = 'state/phiop_dot'
     []
     [solid_volume_fraction]
-        type = ScalarVariableMultiplication
+        type = ScalarMultiplication
         from_var = 'state/ws state/V'
         constant_coefficient = '${rho_sm1M} 1.0'
         to_var = 'state/phis'
@@ -228,28 +228,28 @@
         pyrolysis_composite_volume = 'state/V'
     []
     [phi_b]
-        type = ScalarVariableMultiplication
+        type = ScalarMultiplication
         from_var = 'state/wb state/V'
         constant_coefficient = '${rho_bm1M} 1.0'
         to_var = 'state/phib'
         reciprocal = 'false true'
     []
     [phi_s]
-        type = ScalarVariableMultiplication
+        type = ScalarMultiplication
         from_var = 'state/ws state/V'
         constant_coefficient = '${rho_sm1M} 1.0'
         to_var = 'state/phis'
         reciprocal = 'false true'
     []
     [phi_p]
-        type = ScalarVariableMultiplication
+        type = ScalarMultiplication
         from_var = 'state/wp state/V'
         constant_coefficient = '${rho_pm1M} 1.0'
         to_var = 'state/phip'
         reciprocal = 'false true'
     []
     [phi_gcp]
-        type = ScalarVariableMultiplication
+        type = ScalarMultiplication
         from_var = 'state/wgcp state/V'
         constant_coefficient = '${rho_gm1M} 1.0'
         to_var = 'state/phigcp'
@@ -275,7 +275,7 @@
         to_var = 'state/cp'
     []
     [rhocp]
-        type = ScalarVariableMultiplication
+        type = ScalarMultiplication
         from_var = 'state/rho state/cp'
         to_var = 'state/rhocp'
     []

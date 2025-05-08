@@ -208,7 +208,7 @@
 
     # total flux
     [flux_advection]
-        type = ScalarVariableMultiplication
+        type = ScalarMultiplication
         from_var = 'state/dPcdphiL state/perm'
         to_var = 'state/F_advec'
         constant_coefficient = ${advec_constant}

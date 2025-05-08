@@ -7,4 +7,12 @@
     exodiff = 'simple_diffusion_out.e'
     requirement = 'The system shall be able to solve a simple diffusion problem.'
   []
+  [check_jacobian]
+    type = 'PetscJacobianTester'
+    input = 'simple_diffusion.i'    
+    run_sim = True
+    ratio_tol = 1e-7
+    difference_tol = 1e-6
+    requirement = 'We shall be able to produce the exact Jacobian.'
+  []
 []

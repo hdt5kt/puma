@@ -8,7 +8,7 @@ import subprocess
 exp_dat_list = [
     "experiment_comp/5degpermin_run1.csv",
     "experiment_comp/10degpermin_run1.csv",
-    "experiment_comp/20degpermin_run3.csv",
+    "experiment_comp/20degpermin_run1.csv",
 ]
 
 col = ["k", "b", "r", "r", "r"]
@@ -25,7 +25,7 @@ heating_rate = [5, 10, 20]  # deg per min
 col_sim = ["k", "b", "r"]
 label_sim = ["5C/min", "10C/min", "20C/min"]
 run_simulation = True
-Ea = 216820  # J mol-1
+Ea = 220820  # J mol-1
 A = 1e14  # s-1
 corenum = 1  # number of cores used for simulation
 puma_run_file = "./../../../../puma-opt"
@@ -101,7 +101,7 @@ for i in range(len(exp_dat_list)):
 ax.set(ylabel="weight fraction")
 ax.set(xlabel="Temperature (K)")
 ax.set_ylim((0.5, 1.05))
-ax.set_xlim((400, 1000))
+ax.set_xlim((300, 1200))
 
 
 ax.legend(loc="upper right", frameon=False)
