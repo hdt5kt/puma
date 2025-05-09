@@ -14,6 +14,7 @@
 #include "MooseVariableFE.h"
 #include "RankTwoTensor.h"
 #include "StabilizationUtils.h"
+#include "GradientOperator.h"
 #include "FEProblem.h"
 
 #include "libmesh/quadrature.h"
@@ -80,8 +81,6 @@ InputParameters
 PumaCoupledKernelInterface<T>::validParams()
 {
   InputParameters params = T::validParams();
-  params.addClassDescription(
-      "Time derivative with a material constant for different coupled variables.");
 
   params.addCoupledVar("temperature", "The temperature");
   params.addCoupledVar("pressure", "The pressure");

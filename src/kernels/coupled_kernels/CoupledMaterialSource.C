@@ -7,67 +7,16 @@ registerMooseObject("PumaApp", CoupledMaterialSource);
 InputParameters
 CoupledMaterialSource::validParams()
 {
-  InputParameters params = Kernel::validParams();
+  InputParameters params = PumaCoupledKernelInterface<Kernel>::validParams();
   params.addClassDescription(
       "Source term defined by the material property for different coupled variables");
-
-  params.addCoupledVar("temperature", "The temperature");
-  params.addCoupledVar("pressure", "The pressure");
-  params.addCoupledVar("fluid_fraction", "Volume fraction of the product");
-  params.addCoupledVar("displacements", "The displacements");
-
-  params.addRequiredParam<MaterialPropertyName>("material_prop", "Material based source term");
-
-  params.addParam<MaterialPropertyName>("material_temperature_derivative",
-                                        "Derivative of the material_prop w.r.t. the temperature");
-  params.addParam<MaterialPropertyName>("material_pressure_derivative",
-                                        "Derivative of the material_prop w.r.t. the pressure");
-  params.addParam<MaterialPropertyName>(
-      "material_fluid_fraction_derivative",
-      "Derivative of the material_prop w.r.t. the fluid fraction");
-  params.addParam<MaterialPropertyName>(
-      "material_deformation_gradient_derivative",
-      "Derivative of the material_prop w.r.t. the deformation gradient");
-
   params.addParam<Real>("coefficient", -1, "Coefficient to be multiplied to the source");
   return params;
 }
 
 CoupledMaterialSource::CoupledMaterialSource(const InputParameters & parameters)
-  : Kernel(parameters),
-    _M(getMaterialProperty<Real>("material_prop")),
-    _coeff(getParam<Real>("coefficient"))
+  : PumaCoupledKernelInterface<Kernel>(parameters), _coeff(getParam<Real>("coefficient"))
 {
-  if (isCoupled("temperature"))
-  {
-    if (!isParamValid("material_temperature_derivative"))
-      paramError("material_temperature_derivative",
-                 "If temperature is coupled, material_temperature_derivative must be provided.");
-    _T_id = coupled("temperature");
-    _T_phi = &getVar("temperature", 0)->phi();
-    _dMdT = &getMaterialProperty<Real>("material_temperature_derivative");
-  }
-
-  if (isCoupled("pressure"))
-  {
-    if (!isParamValid("material_pressure_derivative"))
-      paramError("material_pressure_derivative",
-                 "If pressure is coupled, material_pressure_derivative must be provided.");
-    _P_id = coupled("pressure");
-    _P_phi = &getVar("pressure", 0)->phi();
-    _dMdP = &getMaterialProperty<Real>("material_pressure_derivative");
-  }
-
-  if (isCoupled("fluid_fraction"))
-  {
-    if (!isParamValid("material_fluid_fraction_derivative"))
-      paramError(
-          "material_fluid_fraction_derivative",
-          "If fluid_fraction is coupled, material_fluid_fraction_derivative must be provided.");
-    _vf_id = coupled("fluid_fraction");
-    _vf_phi = &getVar("fluid_fraction", 0)->phi();
-    _dMdvf = &getMaterialProperty<Real>("material_fluid_fraction_derivative");
-  }
 }
 
 Real
@@ -109,6 +58,11 @@ CoupledMaterialSource::computeQpOffDiagJacobian(unsigned int jvar)
 
   if (jvar == _vf_id)
     return _coeff * _test[_i][_qp] * (*_dMdvf)[_qp] * (*_vf_phi)[_j][_qp];
+
+  if (_ndisp > 0)
+    for (decltype(_ndisp) k = 0; k < _ndisp; ++k)
+      if (jvar == _disp_id[k])
+        return -_test[_i][_qp] * (*_dMdF)[_qp].doubleContraction(gradTrial(k));
 
   return 0.0;
 }
