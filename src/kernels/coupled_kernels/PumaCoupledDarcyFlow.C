@@ -84,30 +84,35 @@ PumaCoupledDarcyFlow::computeQpJacobian()
 Real
 PumaCoupledDarcyFlow::computeQpOffDiagJacobian(unsigned int jvar)
 {
-  if (jvar == _T_id)
-  {
-    auto R = _coeff * _grad_test[_i][_qp] * (*_dMdT)[_qp] * (*_T_phi)[_j][_qp] * (*_grad_var)[_qp];
-    if (_T_id == _coupled_id)
-      R += _coeff * _grad_test[_i][_qp] * _M[_qp] * (*_coupled_grad_phi)[_j][_qp];
-    return R;
-  }
+  if (isCoupled("temperature"))
+    if (jvar == _T_id)
+    {
+      auto R =
+          _coeff * _grad_test[_i][_qp] * (*_dMdT)[_qp] * (*_T_phi)[_j][_qp] * (*_grad_var)[_qp];
+      if (_T_id == _coupled_id)
+        R += _coeff * _grad_test[_i][_qp] * _M[_qp] * (*_coupled_grad_phi)[_j][_qp];
+      return R;
+    }
 
-  if (jvar == _P_id)
-  {
-    auto R = _coeff * _grad_test[_i][_qp] * (*_dMdP)[_qp] * (*_P_phi)[_j][_qp] * (*_grad_var)[_qp];
-    if (_P_id == _coupled_id)
-      R += _coeff * _grad_test[_i][_qp] * _M[_qp] * (*_coupled_grad_phi)[_j][_qp];
-    return R;
-  }
+  if (isCoupled("pressure"))
+    if (jvar == _P_id)
+    {
+      auto R =
+          _coeff * _grad_test[_i][_qp] * (*_dMdP)[_qp] * (*_P_phi)[_j][_qp] * (*_grad_var)[_qp];
+      if (_P_id == _coupled_id)
+        R += _coeff * _grad_test[_i][_qp] * _M[_qp] * (*_coupled_grad_phi)[_j][_qp];
+      return R;
+    }
 
-  if (jvar == _vf_id)
-  {
-    auto R =
-        _coeff * _grad_test[_i][_qp] * (*_dMdvf)[_qp] * (*_vf_phi)[_j][_qp] * (*_grad_var)[_qp];
-    if (_vf_id == _coupled_id)
-      R += _coeff * _grad_test[_i][_qp] * _M[_qp] * (*_coupled_grad_phi)[_j][_qp];
-    return R;
-  }
+  if (isCoupled("fluid_fraction"))
+    if (jvar == _vf_id)
+    {
+      auto R =
+          _coeff * _grad_test[_i][_qp] * (*_dMdvf)[_qp] * (*_vf_phi)[_j][_qp] * (*_grad_var)[_qp];
+      if (_vf_id == _coupled_id)
+        R += _coeff * _grad_test[_i][_qp] * _M[_qp] * (*_coupled_grad_phi)[_j][_qp];
+      return R;
+    }
 
   if (_ndisp > 0)
     for (decltype(_ndisp) k = 0; k < _ndisp; ++k)

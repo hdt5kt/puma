@@ -1,34 +1,35 @@
 // Copyright 2023, UChicago Argonne, LLC All Rights Reserved
 // License: L-GPL 3.0
-#include "CoupledMaterialSource.h"
+#include "CoupledAdditiveFlux.h"
 
-registerMooseObject("PumaApp", CoupledMaterialSource);
+registerMooseObject("PumaApp", CoupledAdditiveFlux);
 
 InputParameters
-CoupledMaterialSource::validParams()
+CoupledAdditiveFlux::validParams()
 {
   InputParameters params = PumaCoupledKernelInterface<Kernel>::validParams();
-  params.addClassDescription(
-      "Source term defined by the material property for different coupled variables");
-  params.addParam<Real>("coefficient", -1, "Coefficient to be multiplied to the source");
+  params.addClassDescription("The additive term for the flux in the diffusion equation");
+
+  params.addRequiredParam<RealVectorValue>("value", "Vector value added to the flux");
+
   return params;
 }
 
-CoupledMaterialSource::CoupledMaterialSource(const InputParameters & parameters)
-  : PumaCoupledKernelInterface<Kernel>(parameters), _coeff(getParam<Real>("coefficient"))
+CoupledAdditiveFlux::CoupledAdditiveFlux(const InputParameters & parameters)
+  : PumaCoupledKernelInterface<Kernel>(parameters), _g(getParam<RealVectorValue>("value"))
 {
 }
 
 Real
-CoupledMaterialSource::computeQpResidual()
+CoupledAdditiveFlux::computeQpResidual()
 {
-  return _coeff * _test[_i][_qp] * _M[_qp];
+  return _grad_test[_i][_qp] * _M[_qp] * _g;
 }
 
 Real
-CoupledMaterialSource::computeQpJacobian()
+CoupledAdditiveFlux::computeQpJacobian()
 {
-  auto R = _coeff * _test[_i][_qp] * _phi[_j][_qp];
+  auto R = _grad_test[_i][_qp] * _g * _phi[_j][_qp];
 
   if (isCoupled("temperature")) // without checking for isCoupled, segmentation fault will happened
                                 // if the coupled variables are not definied in the input file. This
@@ -48,24 +49,24 @@ CoupledMaterialSource::computeQpJacobian()
 }
 
 Real
-CoupledMaterialSource::computeQpOffDiagJacobian(unsigned int jvar)
+CoupledAdditiveFlux::computeQpOffDiagJacobian(unsigned int jvar)
 {
   if (isCoupled("temperature"))
     if (jvar == _T_id)
-      return _coeff * _test[_i][_qp] * (*_dMdT)[_qp] * (*_T_phi)[_j][_qp];
+      return _grad_test[_i][_qp] * (*_dMdT)[_qp] * (*_T_phi)[_j][_qp] * _g;
 
   if (isCoupled("pressure"))
     if (jvar == _P_id)
-      return _coeff * _test[_i][_qp] * (*_dMdP)[_qp] * (*_P_phi)[_j][_qp];
+      return _grad_test[_i][_qp] * (*_dMdP)[_qp] * (*_P_phi)[_j][_qp] * _g;
 
   if (isCoupled("fluid_fraction"))
     if (jvar == _vf_id)
-      return _coeff * _test[_i][_qp] * (*_dMdvf)[_qp] * (*_vf_phi)[_j][_qp];
+      return _grad_test[_i][_qp] * (*_dMdvf)[_qp] * (*_vf_phi)[_j][_qp] * _g;
 
   if (_ndisp > 0)
     for (decltype(_ndisp) k = 0; k < _ndisp; ++k)
       if (jvar == _disp_id[k])
-        return _coeff * _test[_i][_qp] * (*_dMdF)[_qp].doubleContraction(gradTrial(k));
+        return _grad_test[_i][_qp] * (*_dMdF)[_qp].doubleContraction(gradTrial(k)) * _g;
 
   return 0.0;
 }

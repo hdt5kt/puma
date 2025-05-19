@@ -97,14 +97,17 @@ MomentumBalanceCoupledJacobian::computeQpJacobian()
 Real
 MomentumBalanceCoupledJacobian::computeQpOffDiagJacobian(unsigned int jvar)
 {
-  if (jvar == _T_id)
-    return _grad_test[_i][_qp] * (*_dSdT)[_qp].row(_component) * (*_T_phi)[_j][_qp];
+  if (isCoupled("temperature"))
+    if (jvar == _T_id)
+      return _grad_test[_i][_qp] * (*_dSdT)[_qp].row(_component) * (*_T_phi)[_j][_qp];
 
-  if (jvar == _P_id)
-    return _grad_test[_i][_qp] * (*_dSdP)[_qp].row(_component) * (*_P_phi)[_j][_qp];
+  if (isCoupled("pressure"))
+    if (jvar == _P_id)
+      return _grad_test[_i][_qp] * (*_dSdP)[_qp].row(_component) * (*_P_phi)[_j][_qp];
 
-  if (jvar == _vf_id)
-    return _grad_test[_i][_qp] * (*_dSdvf)[_qp].row(_component) * (*_vf_phi)[_j][_qp];
+  if (isCoupled("fluid_fraction"))
+    if (jvar == _vf_id)
+      return _grad_test[_i][_qp] * (*_dSdvf)[_qp].row(_component) * (*_vf_phi)[_j][_qp];
 
   return 0.0;
 }

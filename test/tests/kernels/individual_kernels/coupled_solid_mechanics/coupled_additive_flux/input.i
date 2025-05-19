@@ -3,9 +3,6 @@ mu = 0.3
 
 [GlobalParams]
   displacements = 'disp_x disp_y'
-  temperature = T
-  pressure = P
-  fluid_fraction = vf
 []
 
 [Mesh]
@@ -17,8 +14,6 @@ mu = 0.3
 [Variables]
   [T]
   []
-  [P]
-  []
 []
 
 [Kernels]
@@ -26,32 +21,23 @@ mu = 0.3
     type = MomentumBalanceCoupledJacobian
     component = 0
     variable = disp_x
+    temperature = T
     material_temperature_derivative = neml2_dpk1dT
-    material_pressure_derivative = R20
   []
   [offDiagStressDiv_y]
     type = MomentumBalanceCoupledJacobian
     component = 1
     variable = disp_y
+    temperature = T
     material_temperature_derivative = neml2_dpk1dT
-    material_pressure_derivative = R20
   []
   [Tsource]
-    type = PumaCoupledDarcyFlow
-    coupled_variable = P
+    type = CoupledAdditiveFlux
+    value = '0.0 -9.8 0.0'
     material_prop = J
     variable = T
+    temperature = T
     material_temperature_derivative = 0.0
-    material_pressure_derivative = 0.0
-    material_deformation_gradient_derivative = neml2_dJdF
-    stabilize_strain = true
-  []
-  [PL2]
-    type = CoupledL2Projection
-    material_prop = J
-    variable = P
-    material_temperature_derivative = 0.0
-    material_pressure_derivative = 0.0
     material_deformation_gradient_derivative = neml2_dJdF
     stabilize_strain = true
   []
@@ -83,27 +69,27 @@ mu = 0.3
     verbose = true
     device = 'cpu'
 
-    moose_input_types = 'VARIABLE VARIABLE MATERIAL'
-    moose_inputs = '     T        P        deformation_gradient'
-    neml2_inputs = '     forces/T forces/P forces/F'
+    moose_input_types = 'VARIABLE MATERIAL'
+    moose_inputs = '     T        deformation_gradient'
+    neml2_inputs = '     forces/T forces/F'
 
-    moose_output_types = 'MATERIAL MATERIAL MATERIAL'
-    moose_outputs = '     J        pc       pk1_stress'
-    neml2_outputs = '     state/J  state/pc state/pk1'
+    moose_output_types = 'MATERIAL MATERIAL'
+    moose_outputs = '     J        pk1_stress'
+    neml2_outputs = '     state/J  state/pk1'
 
-    moose_derivative_types = 'MATERIAL          MATERIAL            MATERIAL            MATERIAL           MATERIAL'
-    moose_derivatives = '     neml2_dJdF        pk1_jacobian        neml2_dpk1dT        neml2_dpcdT        neml2_dpcdP'
-    neml2_derivatives = '     state/J forces/F; state/pk1 forces/F; state/pk1 forces/T; state/pc forces/T; state/pc forces/P'
+    moose_derivative_types = 'MATERIAL          MATERIAL            MATERIAL '
+    moose_derivatives = '     neml2_dJdF        pk1_jacobian        neml2_dpk1dT'
+    neml2_derivatives = '     state/J forces/F; state/pk1 forces/F; state/pk1 forces/T'
   []
 []
 
-# [ICs]
-#   [ic_T]
-#     type = ConstantIC
-#     value = 3
-#     variable = T
-#   []
-# []
+[ICs]
+  [ic_T]
+    type = ConstantIC
+    value = 3
+    variable = T
+  []
+[]
 
 [Materials]
   [zeroR2]
@@ -115,9 +101,9 @@ mu = 0.3
 
 [BCs]
   [left_heat]
-    type = NeumannBC
+    type = DirichletBC
     boundary = left
-    value = 0.01
+    value = 0.001
     variable = T
   []
   [roller_left]

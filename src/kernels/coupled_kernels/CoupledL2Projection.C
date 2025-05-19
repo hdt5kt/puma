@@ -47,14 +47,17 @@ CoupledL2Projection::computeQpJacobian()
 Real
 CoupledL2Projection::computeQpOffDiagJacobian(unsigned int jvar)
 {
-  if (jvar == _T_id)
-    return -_test[_i][_qp] * (*_dMdT)[_qp] * (*_T_phi)[_j][_qp];
+  if (isCoupled("temperature"))
+    if (jvar == _T_id)
+      return -_test[_i][_qp] * (*_dMdT)[_qp] * (*_T_phi)[_j][_qp];
 
-  if (jvar == _P_id)
-    return -_test[_i][_qp] * (*_dMdP)[_qp] * (*_P_phi)[_j][_qp];
+  if (isCoupled("pressure"))
+    if (jvar == _P_id)
+      return -_test[_i][_qp] * (*_dMdP)[_qp] * (*_P_phi)[_j][_qp];
 
-  if (jvar == _vf_id)
-    return -_test[_i][_qp] * (*_dMdvf)[_qp] * (*_vf_phi)[_j][_qp];
+  if (isCoupled("fluid_fraction"))
+    if (jvar == _vf_id)
+      return -_test[_i][_qp] * (*_dMdvf)[_qp] * (*_vf_phi)[_j][_qp];
 
   if (_ndisp > 0)
     for (decltype(_ndisp) k = 0; k < _ndisp; ++k)
