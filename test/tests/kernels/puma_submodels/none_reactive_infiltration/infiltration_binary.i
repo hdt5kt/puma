@@ -1,12 +1,12 @@
-void_data = 'void.csv'
-void_ndata = 10000
 ############### Input ################
 
 # Simulation parameters
 dt = 5 #s
-total_time = 3200 #s
+total_time = 20000 #s
 
-flux_in = 0.0008 # volume fraction
+flux_in = 0.1 # volume fraction
+flux_out = 0.1
+t_ramp = 1000
 
 # denisty # g cm-3
 rho_PR = 2.00 # density at liquid state
@@ -24,9 +24,12 @@ mu_PR = 10
 kk_PR = 2e-5
 
 # macroscopic property
-D_macro = 0.005 #cm2 s-1
+D_macro = 0.0 #cm2 s-1
 
-## Calculations
+porosity_feature = 0.8
+porosity_background = 0.2
+
+gravity = 980.665
 
 [GlobalParams]
   pressure = P
@@ -70,16 +73,16 @@ D_macro = 0.005 #cm2 s-1
     material_fluid_fraction_derivative = dM3dphif
     material_pressure_derivative = dM3dP
   []
-   [gravity]
+  [gravity]
     type = CoupledAdditiveFlux
     material_prop = M4
-    value = '0.0 980.665 0.0'
+    value = '0.0 ${gravity} 0.0'
     variable = phif
     material_fluid_fraction_derivative = dM4dphif
     material_pressure_derivative = dM4dP
   []
   [L2]
-   type = CoupledL2Projection
+    type = CoupledL2Projection
     material_prop = M5
     variable = P
     material_fluid_fraction_derivative = dM5dphif
@@ -106,6 +109,15 @@ D_macro = 0.005 #cm2 s-1
       execute_on = 'INITIAL TIMESTEP_END'
     []
   []
+  [permeability]
+    order = CONSTANT
+    family = MONOMIAL
+    [AuxKernel]
+      type = MaterialRealAux
+      property = perm
+      execute_on = 'INITIAL TIMESTEP_END'
+    []
+  []
 []
 
 [NEML2]
@@ -126,13 +138,13 @@ D_macro = 0.005 #cm2 s-1
     moose_parameters = '     void'
     neml2_parameters = '     phif_max_param'
 
-    moose_output_types = 'MATERIAL MATERIAL MATERIAL MATERIAL'
-    moose_outputs = '     M3       M4       M5       poro'
-    neml2_outputs = '     state/M3 state/M4 state/M5 state/poro'
+    moose_output_types = 'MATERIAL MATERIAL MATERIAL MATERIAL   MATERIAL    MATERIAL'
+    moose_outputs = '     M3       M4       M5       poro       phis        perm'
+    neml2_outputs = '     state/M3 state/M4 state/M5 state/poro state/solid state/perm'
 
-    moose_derivative_types = 'MATERIAL'
-    moose_derivatives = '     dM5dphif'
-    neml2_derivatives = '     state/M5 forces/phif'
+    moose_derivative_types = 'MATERIAL              MATERIAL'
+    moose_derivatives = '     dM5dphif              dM4dphif'
+    neml2_derivatives = '     state/M5 forces/phif; state/M4 forces/phif'
   []
 []
 
@@ -144,25 +156,38 @@ D_macro = 0.005 #cm2 s-1
   []
   [constant_derivative]
     type = GenericConstantMaterial
-    prop_names = 'dM1dphif dM1dP dM2dphif dM2dP dM3dphif dM3dP dM4dphif dM4dP dM5dP'
-    prop_values = '0.0     0.0   0.0     0.0    0.0     0.0    0.0      0.0   0.0'
+    prop_names = 'dM1dphif dM1dP dM2dphif dM2dP dM3dphif dM3dP dM4dP dM5dP'
+    prop_values = '0.0     0.0   0.0     0.0    0.0     0.0    0.0   0.0'
   []
-  [void]
-    #type = GenericConstantMaterial
-    #prop_names = 'void'
-    #prop_values = 0.9
-    type = GenericFunctionMaterial
-    prop_names = 'void'
-    prop_values = void0
+  [void_feature]
+    type = GenericConstantMaterial
+    prop_names = void
+    prop_values = ${porosity_feature}
+    block = circle
+  []
+  [void_background]
+    type = GenericConstantMaterial
+    prop_names = void
+    prop_values = ${porosity_background}
+    block = non_circle
   []
 []
 
 [Functions]
-  [void0]
-    type = PiecewiseConstantFromCSV
-    read_prop_user_object = reader_object
-    read_type = 'voronoi'
-    column_number = 3
+  [flux_in]
+    type = PiecewiseLinear
+    x = '0 ${t_ramp}'
+    y = '0 ${flux_in}'
+  []
+  [flux_out]
+    type = PiecewiseLinear
+    x = '0 ${t_ramp}'
+    y = '0 ${flux_out}'
+  []
+  [dirichlet_in]
+    type = PiecewiseLinear
+    x = '0 ${t_ramp}'
+    y = '0 ${fparse 1-porosity_background}'
   []
 []
 
@@ -174,21 +199,16 @@ D_macro = 0.005 #cm2 s-1
 []
 
 [BCs]
-  [bottom_flow]
-    type = NeumannBC
+  [bottom_inlet]
+    type = InfiltrationWake
     boundary = core_bottom
-    value = ${flux_in}
+    inlet_flux = flux_in
+    outlet_flux = flux_out
+    product_fraction = 0.0001
+    product_fraction_derivative = 0.0
+    solid_fraction = phis
+    solid_fraction_derivative = 0.0
     variable = phif
-  []
-[]
-
-[UserObjects]
-  [reader_object]
-    type = PropertyReadFile
-    prop_file_name = 'gold/${void_data}'
-    read_type = 'voronoi'
-    nprop = 4 # number of columns in CSV
-    nvoronoi = ${void_ndata} # number of rows that are considered
   []
 []
 
@@ -201,12 +221,12 @@ D_macro = 0.005 #cm2 s-1
 
   line_search = none
 
-  nl_abs_tol = 1e-08
+  nl_abs_tol = 1e-06
   nl_rel_tol = 1e-08
   nl_max_its = 12
 
   end_time = ${total_time}
-  dtmax = '${fparse 100*dt}'
+  dtmax = '${fparse 50*dt}'
 
   [TimeStepper]
     type = IterationAdaptiveDT

@@ -33,8 +33,8 @@ method = "in_out"  # choices: random, in_out_circle
 if method == "random":
     beta_a = 2.0
     beta_b = 10.0
-    min_porosity = 0.1
-    max_porosity = 0.7
+    min_porosity = 0.2
+    max_porosity = 0.5
     len_scale = 1
 
 ###### user provide the region where the value is 'a', else it is 'b'
@@ -45,14 +45,16 @@ if method == "in_out":
             2,
             5,
             5,
-            0,
         ],  # three values for circle: radius, x, y coordinates of the center}
     }
-    in_value = 0.1
-    out_value = 0.3
+    in_value = 0.8
+    out_value = 0.2
 
 # import the desirable mesh
 mesh = meshio.read(mesh_name)
+X = mesh.points[:, 0]
+Y = mesh.points[:, 1]
+Z = mesh.points[:, 2]
 
 ####################### ------------- MAIN -------------- #######################
 
@@ -66,10 +68,6 @@ if method == "random":
     for i in range(nfields):
         srf.mesh(mesh, points="points", name="porosity", seed=135)
         # srf.mesh(mesh, points="centroids", name="porosity", seed=125)
-
-    X = mesh.points[:, 0]
-    Y = mesh.points[:, 1]
-    Z = mesh.points[:, 2]
 
     data = util.normal_to_beta(
         mesh,

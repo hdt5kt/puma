@@ -1,15 +1,4 @@
 [Models]
-    # [Jacobian]
-    # type = DeformationGradientJacobian
-    # deformation_gradient = 'forces/F'
-    # jacobian = 'state/J'
-    # []
-    # [M1]
-    #     type = ScalarLinearCombination
-    #     coefficients = "${rho_f}"
-    #     from_var = 'state/J'
-    #     to_var = 'state/M1'
-    # []
     [phif_max]
         type = ScalarParameterToState
         from = 1.0
@@ -23,6 +12,13 @@
         porosity = 'state/phif_max'
         permeability = 'state/perm'
     []
+    [effective_saturation]
+        type = EffectiveSaturation
+        residual_volume_fraction = 0.00001
+        flow_fraction = 'forces/phif'
+        max_fraction = 'state/phif_max'
+        effective_saturation = 'state/Seff'
+    []
     [M3]
         type = ScalarLinearCombination
         coefficients = "${rhof_nu}"
@@ -30,17 +26,10 @@
         to_var = 'state/M3'
     []
     [M4]
-        type = ScalarLinearCombination
-        coefficients = "${rhof2_nu}"
-        from_var = 'state/perm'
+        type = ScalarMultiplication
+        coefficient = "${rhof2_nu}"
+        from_var = 'state/perm state/Seff'
         to_var = 'state/M4'
-    []
-    [effective_saturation]
-        type = EffectiveSaturation
-        residual_volume_fraction = 0.0
-        flow_fraction = 'forces/phif'
-        max_fraction = 'state/phif_max'
-        effective_saturation = 'state/Seff'
     []
     [capillary_pressure]
         type = BrooksCoreyPressure
@@ -62,8 +51,16 @@
         to_var = 'state/poro'
         coefficients = '1.0 -1.0'
     []
+    [solid_fraction]
+        type = ScalarLinearCombination
+        from_var = 'state/phif_max'
+        to_var = 'state/solid'
+        constant_coefficient = 1.0
+        coefficients = '-1.0'
+    []
     [model]
         type = ComposedModel
-        models = 'empty_porosity phif_max permeability effective_saturation capillary_pressure M3 M4 M5'
+        models = 'solid_fraction empty_porosity phif_max permeability effective_saturation capillary_pressure M3 M4 M5'
+        additional_outputs = 'state/perm'
     []
 []

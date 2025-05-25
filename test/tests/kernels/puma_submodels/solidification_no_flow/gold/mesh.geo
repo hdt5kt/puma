@@ -58,6 +58,9 @@ Physical Surface("non_circle") = {1:4};
 Physical Surface("circle") = {5};
  
 Physical Curve("core_bottom") = {12};
+Physical Curve("core_top") = {34};
+Physical Curve("core_sides") = {23,41};
+Physical Curve("circle_interface") = {56,67,78,85};
  
 Mesh 2;
 Save "core.msh";

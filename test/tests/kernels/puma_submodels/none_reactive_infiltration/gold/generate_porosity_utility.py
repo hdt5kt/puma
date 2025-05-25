@@ -20,25 +20,26 @@ def normal_to_beta(
 
 
 def in_out_region(mesh, region, in_value, out_value):
-
     X = mesh.points[:, 0]
     Y = mesh.points[:, 1]
+
+    inside_id = np.zeros_like(X, dtype=bool)  # Default: all outside
 
     if region["shape"] == "circle":
         circle_info = region["info"]
         radius = circle_info[0]
-        x_circle = circle_info[0]
-        y_circle = circle_info[0]
+        x_circle = circle_info[1]
+        y_circle = circle_info[2]
 
-    # Compute squared distances
-    dist_p2 = (X - x_circle) ** 2 + (Y - y_circle) ** 2
-    radius_p2 = radius**2
+        # Compute squared distances
+        dist_p2 = (X - x_circle) ** 2 + (Y - y_circle) ** 2
+        radius_p2 = radius**2
 
-    # Identify points inside or on the circle
-    inside_id = dist_p2 <= radius_p2
+        # Identify points inside or on the circle
+        inside_id = dist_p2 <= radius_p2
 
-    # asign data value for that
-    data = out_value * np.ones_like(X)
+    # Assign values
+    data = np.full_like(X, out_value, dtype=float)
     data[inside_id] = in_value
 
     return data

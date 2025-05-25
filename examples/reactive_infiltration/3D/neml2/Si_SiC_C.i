@@ -15,7 +15,7 @@
     []
     [liquid_reactivity]
         type = HermiteSmoothStep
-        argument = 'forces/phi_L'
+        argument = 'forces/phif'
         value = 'state/R_L'
         lower_bound = 0
         upper_bound = 0.1
