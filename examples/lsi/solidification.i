@@ -185,6 +185,28 @@ dOmega_f = '${fparse omega_Si_s-omega_Si_l}'
       execute_on = 'INITIAL TIMESTEP_END'
     []
   []
+  [Ff_01]
+    order = CONSTANT
+    family = MONOMIAL
+    [AuxKernel]
+      type = MaterialRankTwoTensorAux
+      i = 1
+      j = 1
+      property = Ff
+      execute_on = 'INITIAL TIMESTEP_END'
+    []
+  []
+  [Ft_00]
+    order = CONSTANT
+    family = MONOMIAL
+    [AuxKernel]
+      type = MaterialRankTwoTensorAux
+      i = 0
+      j = 0
+      property = Ft
+      execute_on = 'INITIAL TIMESTEP_END'
+    []
+  []
 []
 
 [Physics]
@@ -228,9 +250,12 @@ dOmega_f = '${fparse omega_Si_s-omega_Si_l}'
     moose_parameters = '     phis        phip        phinoreact              '
     neml2_parameters = '     phis_param  phip_param  phinoreact_param '
 
-    moose_output_types = 'MATERIAL   MATERIAL   MATERIAL   MATERIAL     MATERIAL     MATERIAL'
-    moose_outputs = '     pk1_stress M6         M10        phif_l       phif_s       solidification_fraction'
-    neml2_outputs = '     state/pk1  state/M6   state/M10  state/phif_l state/phif_s state/omcliquid'
+    moose_output_types = 'MATERIAL     MATERIAL   MATERIAL   MATERIAL
+                          MATERIAL     MATERIAL   MATERIAL   MATERIAL'
+    moose_outputs = '     pk1_stress   M6         M10        phif_l
+                          phif_s       Ff         Ft         solidification_fraction'
+    neml2_outputs = '     state/pk1    state/M6   state/M10  state/phif_l
+                          state/phif_s state/Ff   state/Ft   state/omcliquid'
 
     moose_derivative_types = 'MATERIAL               MATERIAL
                               MATERIAL               MATERIAL
