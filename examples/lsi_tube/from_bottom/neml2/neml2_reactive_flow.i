@@ -199,40 +199,35 @@
     []
     [no_phase_change]
         type = ScalarParameterToState
-        from = 0.99
+        from = 1.0
         to = 'state/c'
     []
     [fluid_F]
-        type = PhaseChangeDeformationGradient
+        type = PhaseChangeDeformationGradientJacobian
         phase_fraction = 'state/c'
         CPE = ${swelling_coef}
-        deformation_gradient = 'state/Ff'
+        jacobian = 'state/Jf'
         fluid_fraction = 'forces/phif'
-        inverse_condition = true
-    []
-    [FFf]
-        type = R2Multiplication
-        A = 'forces/F'
-        B = 'state/Ff'
-        to = 'state/FFf'
-        invert_B = false
     []
     # thermal add-on ###########
     [Fthermal]
-        type = ThermalDeformationGradient
+        type = ThermalDeformationGradientJacobian
         temperature = 'forces/T'
         reference_temperature = ${Tref}
         CTE = ${therm_expansion}
-        deformation_gradient = 'state/Ft'
-        inverse_condition = true
+        jacobian = 'state/Jt'
+    []
+    [FFf]
+        type = ScalarMultiplication
+        from_var = 'state/Jt state/Jf'
+        to_var = 'state/Jtotal'
     []
     # -----------------------------
     [totalF]
-        type = R2Multiplication
-        A = 'state/FFf'
-        B = 'state/Ft'
-        to = 'state/Fe'
-        invert_B = false
+        type = VolumeAdjustDeformationGradient
+        input = 'forces/F'
+        output = 'state/Fe'
+        jacobian = 'state/Jtotal'
     []
     ########
     [green_strain]
@@ -353,7 +348,8 @@
     [model_M3456]
         type = ComposedModel
         models = 'phif_max phinoreact model_sm
-        permeability effective_saturation capillary_pressure M3 M4 M5 M6'
+        permeability effective_saturation capillary_pressure M3 M4 M5 M6
+        '
         additional_outputs = 'state/perm state/phif_max'
     []
     [model]

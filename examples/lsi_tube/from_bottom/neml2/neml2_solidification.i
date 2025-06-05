@@ -61,38 +61,33 @@
     # solidification add-on ###########
     ########
     [fluid_F]
-        type = PhaseChangeDeformationGradient
+        type = PhaseChangeDeformationGradientJacobian
         phase_fraction = 'state/cliquid'
         CPE = '${swelling_coef}'
         CPC = '${dOmega_f}'
-        deformation_gradient = 'state/Ff'
+        jacobian = 'state/Jf'
         fluid_fraction = 'forces/phif'
-        inverse_condition = true
-    []
-    # --------------------------------------
-    [FFf]
-        type = R2Multiplication
-        A = 'forces/F'
-        B = 'state/Ff'
-        to = 'state/FFf'
-        invert_B = false
     []
     # thermal add-on ###########
     [Fthermal]
-        type = ThermalDeformationGradient
+        type = ThermalDeformationGradientJacobian
         temperature = 'forces/T'
         reference_temperature = '${Tref}'
         CTE = ${therm_expansion}
-        deformation_gradient = 'state/Ft'
-        inverse_condition = true
+        jacobian = 'state/Jt'
+    []
+    # --------------------------------------
+    [FFf]
+        type = ScalarMultiplication
+        from_var = 'state/Jt state/Jf'
+        to_var = 'state/Jtotal'
     []
     # -----------------------------
     [totalF]
-        type = R2Multiplication
-        A = 'state/FFf'
-        B = 'state/Ft'
-        to = 'state/Fe'
-        invert_B = false
+        type = VolumeAdjustDeformationGradient
+        input = 'forces/F'
+        output = 'state/Fe'
+        jacobian = 'state/Jtotal'
     []
     [green_strain]
         type = GreenLagrangeStrain
@@ -163,6 +158,6 @@
     [model]
         type = ComposedModel
         models = 'model_sm model_solidification model_M6'
-        additional_outputs = 'state/phif_s state/phif_l'
+        additional_outputs = 'state/phif_s state/phif_l state/omcliquid'
     []
 []
