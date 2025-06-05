@@ -79,7 +79,7 @@
         CPE = '${swelling_coef}'
         CPC = '${dOmega_f}'
         deformation_gradient = 'state/Ff'
-        fluid_fraction = 'forces/phif'
+        fluid_fraction = 'state/phif'
         inverse_condition = true
     []
     [FFf]
@@ -135,7 +135,7 @@
     []
     [model_pk1]
         type = ComposedModel
-        models = 'fluid_F FFf
+        models = 'fluid_F FFf phif
                   Fthermal totalF green_strain S_pk2 S_pk2_R2 S_pk1'
         additional_outputs = 'state/Fe'
     []

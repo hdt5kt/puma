@@ -30,7 +30,7 @@ rho_C = 2.26e3
 cp_Si = 7.1e2
 cp_SiC = 5.5e2
 cp_C = 1.5e2
-rho_Si_s = 2.37e3 # density at solid state
+rho_Si_s = 2.37 # density at solid state
 swelling_coef = 1e-2
 
 E = 400e9
@@ -54,7 +54,7 @@ meshfile = 'gold/2D_plane.msh'
 
 omega_Si_s = '${fparse M_Si/rho_Si_s}'
 omega_Si_l = '${fparse M_Si/rho_Si}'
-dOmega_f = '${fparse omega_Si_s-omega_Si_l}'
+dOmega_f = '${fparse (omega_Si_s-omega_Si_l)/omega_Si_l}'
 
 [GlobalParams]
   displacements = 'disp_x disp_y'
@@ -185,6 +185,39 @@ dOmega_f = '${fparse omega_Si_s-omega_Si_l}'
       execute_on = 'INITIAL TIMESTEP_END'
     []
   []
+  [Ff00]
+    order = CONSTANT
+    family = MONOMIAL
+    [AuxKernel]
+      type = MaterialRankTwoTensorAux
+      i = 0
+      j = 0
+      property = Ff
+      execute_on = 'INITIAL TIMESTEP_END'
+    []
+  []
+  [Ff11]
+    order = CONSTANT
+    family = MONOMIAL
+    [AuxKernel]
+      type = MaterialRankTwoTensorAux
+      i = 1
+      j = 1
+      property = Ff
+      execute_on = 'INITIAL TIMESTEP_END'
+    []
+  []
+  [Ff10]
+    order = CONSTANT
+    family = MONOMIAL
+    [AuxKernel]
+      type = MaterialRankTwoTensorAux
+      i = 1
+      j = 0
+      property = Ff
+      execute_on = 'INITIAL TIMESTEP_END'
+    []
+  []
 []
 
 [Physics]
@@ -228,9 +261,9 @@ dOmega_f = '${fparse omega_Si_s-omega_Si_l}'
     moose_parameters = '     phis        phip        phinoreact              '
     neml2_parameters = '     phis_param  phip_param  phinoreact_param '
 
-    moose_output_types = 'MATERIAL   MATERIAL   MATERIAL   MATERIAL     MATERIAL     MATERIAL'
-    moose_outputs = '     pk1_stress M6         M10        phif_l       phif_s       solidification_fraction'
-    neml2_outputs = '     state/pk1  state/M6   state/M10  state/phif_l state/phif_s state/omcliquid'
+    moose_output_types = 'MATERIAL   MATERIAL   MATERIAL   MATERIAL     MATERIAL     MATERIAL     MATERIAL'
+    moose_outputs = '     pk1_stress M6         M10        phif_l       Ff           phif_s       solidification_fraction'
+    neml2_outputs = '     state/pk1  state/M6   state/M10  state/phif_l state/Ff     state/phif_s state/omcliquid'
 
     moose_derivative_types = 'MATERIAL               MATERIAL
                               MATERIAL               MATERIAL

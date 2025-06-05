@@ -2,7 +2,7 @@
 
 # Simulation parameters
 dt = 5 #s
-total_time = 20000 #s
+total_time = 10000 #s
 
 flux_in = 0.1 # volume fraction
 flux_out = 0.1
@@ -11,7 +11,7 @@ t_ramp = 1000
 # denisty # g cm-3
 rho_PR = 2.00 # density at liquid state
 
-brooks_corey_threshold = 1e4 #Pa
+brooks_corey_threshold = 3e4 #Pa
 capillary_pressure_power = 3
 phi_L_residual = 0.0
 
@@ -26,8 +26,8 @@ kk_PR = 2e-5
 # macroscopic property
 D_macro = 0.0 #cm2 s-1
 
-porosity_feature = 0.8
-porosity_background = 0.2
+porosity_feature = 0.2
+porosity_background = 0.8
 
 gravity = 980.665
 
@@ -226,7 +226,7 @@ gravity = 980.665
   nl_max_its = 12
 
   end_time = ${total_time}
-  dtmax = '${fparse 50*dt}'
+  dtmax = '${fparse 200*dt}'
 
   [TimeStepper]
     type = IterationAdaptiveDT

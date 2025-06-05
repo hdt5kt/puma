@@ -26,12 +26,12 @@
 
 [Materials]
     [init_phiC0]
-        type = GenericFunctionMaterial
+        type = StationaryGenericFunctionMaterial
         prop_names = 'phi0_C'
         prop_values = phi0_C
     []
     [init_phiSiC0_noreact]
-        type = GenericFunctionMaterial
+        type = StationaryGenericFunctionMaterial
         prop_names = 'phi0SiC_noreact'
         prop_values = phi0SiC_noreact
     []

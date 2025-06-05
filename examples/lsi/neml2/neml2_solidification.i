@@ -122,7 +122,7 @@
         type = ComposedModel
         models = 'fluid_F FFf
                   Fthermal totalF green_strain S_pk2 S_pk2_R2 S_pk1'
-        additional_outputs = 'state/Fe'
+        additional_outputs = 'state/Fe state/Ff'
     []
     [model_sm]
         type = ComposedModel
@@ -163,6 +163,6 @@
     [model]
         type = ComposedModel
         models = 'model_sm model_solidification model_M6'
-        additional_outputs = 'state/phif_s state/phif_l'
+        additional_outputs = 'state/phif_s state/phif_l state/omcliquid'
     []
 []

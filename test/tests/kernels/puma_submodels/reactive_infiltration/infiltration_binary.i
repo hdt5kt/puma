@@ -22,7 +22,7 @@ rho_C = 2.26
 D_LP = 2.65e-6 # cm2 s-1
 l_c = 1.0 # cm
 
-brooks_corey_threshold = 1e4 #Pa
+brooks_corey_threshold = 1e5 #Pa
 capillary_pressure_power = 3
 phi_L_residual = 0.0
 
@@ -297,7 +297,7 @@ chem_ratio = '${fparse k_SiC/k_C}'
   nl_max_its = 12
 
   end_time = ${total_time}
-  dtmax = '${fparse 50*dt}'
+  dtmax = '${fparse 200*dt}'
 
   [TimeStepper]
     type = IterationAdaptiveDT

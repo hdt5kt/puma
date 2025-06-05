@@ -458,7 +458,7 @@ displace_value_y = 1
   nl_max_its = 12
 
   end_time = ${total_time}
-  dtmax = '${fparse 50*dt}'
+  dtmax = '${fparse 200*dt}'
 
   [TimeStepper]
     type = IterationAdaptiveDT

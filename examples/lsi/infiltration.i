@@ -99,6 +99,7 @@ chem_ratio = '${fparse k_SiC/k_C}'
   pressure = P
   fluid_fraction = phif
   temperature = T
+  stabilize_strain = true
 []
 
 [Mesh]
@@ -141,7 +142,6 @@ chem_ratio = '${fparse k_SiC/k_C}'
     material_pressure_derivative = dM1dP
     material_temperature_derivative = dM1dT
     material_deformation_gradient_derivative = dM1dF
-    stabilize_strain = true
   []
   [diffusion]
     type = PumaCoupledDiffusion
@@ -151,7 +151,6 @@ chem_ratio = '${fparse k_SiC/k_C}'
     material_pressure_derivative = dM2dP
     material_temperature_derivative = dM2dT
     material_deformation_gradient_derivative = zeroR2
-    stabilize_strain = true
   []
   [darcy_nograv]
     type = PumaCoupledDarcyFlow
@@ -162,7 +161,6 @@ chem_ratio = '${fparse k_SiC/k_C}'
     material_pressure_derivative = dM3dP
     material_temperature_derivative = dM3dT
     material_deformation_gradient_derivative = zeroR2
-    stabilize_strain = true
   []
   [gravity]
     type = CoupledAdditiveFlux
@@ -173,7 +171,6 @@ chem_ratio = '${fparse k_SiC/k_C}'
     material_pressure_derivative = dM4dP
     material_temperature_derivative = dM4dT
     material_deformation_gradient_derivative = zeroR2
-    stabilize_strain = true
   []
   [L2]
     type = CoupledL2Projection
@@ -183,7 +180,6 @@ chem_ratio = '${fparse k_SiC/k_C}'
     material_pressure_derivative = dM5dP
     material_temperature_derivative = dM5dT
     material_deformation_gradient_derivative = dM5dF
-    stabilize_strain = true
   []
   [source]
     type = CoupledMaterialSource
@@ -194,7 +190,6 @@ chem_ratio = '${fparse k_SiC/k_C}'
     material_pressure_derivative = dMsdP
     material_temperature_derivative = dMsdT
     material_deformation_gradient_derivative = zeroR2
-    stabilize_strain = true
   []
   ## Temperature flow ---------------------------------------------------------
   [temp_time]
@@ -205,7 +200,6 @@ chem_ratio = '${fparse k_SiC/k_C}'
     material_pressure_derivative = dM6dP
     material_temperature_derivative = dM6dT
     material_deformation_gradient_derivative = zeroR2
-    stabilize_strain = true
   []
   [temp_diffusion]
     type = PumaCoupledDiffusion
@@ -215,7 +209,6 @@ chem_ratio = '${fparse k_SiC/k_C}'
     material_pressure_derivative = dM7dP
     material_temperature_derivative = dM7dT
     material_deformation_gradient_derivative = zeroR2
-    stabilize_strain = true
   []
   ##
   ## solid mechanics ---------------------------------------------------------
@@ -324,7 +317,7 @@ chem_ratio = '${fparse k_SiC/k_C}'
   [all]
     model = 'model'
     verbose = true
-    device = 'cpu'
+    device = 'cuda'
 
     moose_input_types = 'POSTPROCESSOR POSTPROCESSOR  VARIABLE    VARIABLE    MATERIAL
                          MATERIAL      MATERIAL       MATERIAL    MATERIAL'
@@ -480,6 +473,7 @@ chem_ratio = '${fparse k_SiC/k_C}'
 [Executioner]
   type = Transient
   solve_type = 'newton'
+  petsc_options = '-ksp_converged_reason'
   petsc_options_iname = '-pc_type -pc_factor_shift_type' #-snes_type'
   petsc_options_value = 'lu NONZERO' # vinewtonrsls'
   automatic_scaling = true

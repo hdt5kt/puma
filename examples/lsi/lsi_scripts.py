@@ -1,5 +1,6 @@
 import numpy as np
 import subprocess
+import os
 from generate_initial_condition import generate_initial_conditions
 
 ########################################## Input ##############################################
@@ -28,13 +29,13 @@ min_solid = 0.2
 max_solid = 0.6
 min_SiCbeta_fraction = 0.1
 max_SiCbeta_fraction = 0.5
-lc = 0.02
+lc = 0.01
 
 ############################# material and reaction properties ################################
 ##           Current properties are for Si - SiC - C systems                                 ##
 
 # universal constant
-gravity = 0.0  # 9.80665  # m/s2
+gravity = 9.8  # 9.80665  # m/s2
 
 # denisty # kg/m3
 rho_Si = 2570  # density at liquid state
@@ -57,13 +58,13 @@ perm_ref = 2e-10  # permeability
 D_macro = 1e-6  # m2 s-1
 
 # porous flow pressure models properties
-brooks_corey_threshold = 1e4  # Pa
+brooks_corey_threshold = 1e6  # Pa
 capillary_pressure_power = 3
 phi_L_residual = 0.0
 permeability_power = 3
 
 # reactive infiltration properties
-D_LP = 2.65e-10  # m2 s-1
+D_LP = 5.65e-10  # m2 s-1
 l_c = 0.01  # m
 k_C = 1.0  # chemical reaction constant
 k_SiC = 1.0  # chemical reaction constant
@@ -72,15 +73,15 @@ k_SiC = 1.0  # chemical reaction constant
 Ts = 1687  # K
 Tf = Ts + 30  # K
 H_latent = 5.0555e3  # egs/mol
-rho_Si_s = 2370  # density at solid state
-swelling_coef = 1e-2
+rho_Si_s = 2370 # density at solid state
+swelling_coef = 1e-4
 
 # heat flow properties
 kappa_eff = 100  # W/mK - thermal conductivity
 
 # thermal expansion coefficients (degree-1)
 Tref = 300  # K
-g = 4e-6
+g = 1e-6
 
 #### stress-strain ####
 E = 400e9
@@ -102,7 +103,8 @@ run_infiltration = True
 
 # heating profiles during solidification
 dTdt_cool = -1.0  # deg per s
-tcool = (Tmax - T0) / (-dTdt_cool)
+Tfinal = Tref #K
+tcool = (Tmax - Tfinal) / (-dTdt_cool)
 twait = 1800
 
 # Simulation parameters
@@ -141,8 +143,8 @@ print("Starting Infiltration")
 
 # run the simulation file infiltration.i and initical_condition_from_csv.i
 if run_infiltration:
-    subprocess.run(
-        [
+    proc1 = subprocess.Popen(
+        [   
             "mpiexec",
             "-n",
             str(corenum),
@@ -151,7 +153,7 @@ if run_infiltration:
             "infiltration.i",
             "initial_condition_from_csv.i",
             "dt={:.16f}".format(dt),
-            "total_time={:.16f}".format(theat + t_ramp + tinfiltrate),
+            "total_time={:.16f}".format(t_ramp + tinfiltrate),
             "flux_in={:.16f}".format(flux_in),
             "flux_out={:.16f}".format(flux_out),
             "t_ramp={:.16f}".format(t_ramp),
@@ -196,15 +198,20 @@ if run_infiltration:
             "swelling_coef={:.16f}".format(swelling_coef),
             "num_file_data={:.16f}".format(num_file_data),
             # "--parse-neml2-only",
-        ]
+        ],
+        stdin=subprocess.DEVNULL,
+        stdout=open("infiltration.log", "w"),
+        stderr=subprocess.STDOUT,
+        text=True,
     )
+    proc1.wait()
 
 print("\n")
 
 print("Starting Solidification")
 
-subprocess.run(
-    [
+proc2 = subprocess.Popen(
+    [   
         "mpiexec",
         "-n",
         str(corenum),
@@ -236,7 +243,7 @@ subprocess.run(
         "zfix={:.16f}".format(zfix),
         "M_Si={:.16f}".format(M_Si),
         "rho_Si={:.16f}".format(rho_Si),
-        "rho_Si_s={:.16f}".format(rho_Si),
+        "rho_Si_s={:.16f}".format(rho_Si_s),
         "rho_SiC={:.16f}".format(rho_SiC),
         "rho_C={:.16f}".format(rho_C),
         "cp_Si={:.16f}".format(cp_Si),
@@ -244,5 +251,10 @@ subprocess.run(
         "cp_C={:.16f}".format(cp_C),
         "swelling_coef={:.16f}".format(swelling_coef),
         # "--parse-neml2-only",
-    ]
+    ],
+    stdin=subprocess.DEVNULL,
+    stdout=open("solidification.log", "w"),
+    stderr=subprocess.STDOUT,
+    text=True
 )
+proc2.wait()

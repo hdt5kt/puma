@@ -265,10 +265,6 @@
                   Fthermal totalF green_strain S_pk2 S_pk2_R2 S_pk1'
         additional_outputs = 'state/Fe'
     []
-    [model_sm]
-        type = ComposedModel
-        models = 'Jacobian M1 model_pk1'
-    []
     ############################################################
     [stress_induce_pressure]
         type = AdvectionStress
@@ -285,7 +281,13 @@
     []
     [advective_stress]
         type = ComposedModel
-        models = 'model_pk1 stress_scale Jacobian stress_induce_pressure'
+        models = 'stress_scale Jacobian stress_induce_pressure'
+    []
+    #-------------------------------
+    [model_sm]
+        type = ComposedModel
+        models = 'Jacobian M1 model_pk1 advective_stress'
+        additional_outputs = 'state/pk1'
     []
     #################################################################
     ## porous flow -----------------------------------------------------------------
@@ -350,14 +352,13 @@
     []
     [model_M3456]
         type = ComposedModel
-        models = 'phif_max phinoreact
-        permeability effective_saturation capillary_pressure M3 M4 M5 M6
-        advective_stress'
+        models = 'phif_max phinoreact model_sm
+        permeability effective_saturation capillary_pressure M3 M4 M5 M6'
         additional_outputs = 'state/perm state/phif_max'
     []
     [model]
         type = ComposedModel
-        models = 'model_solver model_sm model_Ms model_M3456'
+        models = 'model_solver model_Ms model_M3456'
         additional_outputs = 'state/phip state/phis'
     []
 []

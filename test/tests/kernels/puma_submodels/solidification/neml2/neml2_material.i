@@ -71,6 +71,7 @@
     [fluid_F]
         type = PhaseChangeDeformationGradient
         phase_fraction = 'state/cliquid'
+        CPC = ${dOmegaf}
         CPE = '${swelling_coef}'
         deformation_gradient = 'state/Ff'
         fluid_fraction = 'forces/phif'
