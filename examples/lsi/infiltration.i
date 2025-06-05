@@ -285,6 +285,28 @@ chem_ratio = '${fparse k_SiC/k_C}'
       execute_on = 'INITIAL TIMESTEP_END'
     []
   []
+  [Ff_01]
+    order = CONSTANT
+    family = MONOMIAL
+    [AuxKernel]
+      type = MaterialRankTwoTensorAux
+      i = 1
+      j = 1
+      property = Ff
+      execute_on = 'INITIAL TIMESTEP_END'
+    []
+  []
+  [Ft_00]
+    order = CONSTANT
+    family = MONOMIAL
+    [AuxKernel]
+      type = MaterialRankTwoTensorAux
+      i = 0
+      j = 0
+      property = Ft
+      execute_on = 'INITIAL TIMESTEP_END'
+    []
+  []
 []
 
 [Physics]
@@ -332,13 +354,13 @@ chem_ratio = '${fparse k_SiC/k_C}'
 
     moose_output_types = 'MATERIAL       MATERIAL         MATERIAL   MATERIAL    MATERIAL    MATERIAL
                           MATERIAL       MATERIAL         MATERIAL   MATERIAL
-                          MATERIAL       MATERIAL'
+                          MATERIAL       MATERIAL         MATERIAL   MATERIAL'
     moose_outputs = '     pk1_stress     M1               M6         M3          M4          M5
                           poro           phis             perm       phip
-                          Ms             non_liquid     '
+                          Ms             non_liquid       Ff         Ft'
     neml2_outputs = '     state/pk1      state/M1         state/M6   state/M3    state/M4    state/M5
                           state/poro     state/phis       state/perm state/phip
-                          state/Ms       state/phif_max '
+                          state/Ms       state/phif_max   state/Ff   state/Ft'
 
     moose_derivative_types = 'MATERIAL                MATERIAL              MATERIAL
                               MATERIAL                MATERIAL              MATERIAL

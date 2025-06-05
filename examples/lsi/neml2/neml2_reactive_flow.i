@@ -352,8 +352,9 @@
     []
     [model_M3456]
         type = ComposedModel
-        models = 'phif_max phinoreact model_sm
-        permeability effective_saturation capillary_pressure M3 M4 M5 M6'
+        models = 'phif_max phinoreact
+        permeability effective_saturation capillary_pressure M3 M4 M5 M6
+        '
         additional_outputs = 'state/perm state/phif_max'
     []
     [model]

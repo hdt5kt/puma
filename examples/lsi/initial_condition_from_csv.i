@@ -5,7 +5,7 @@
         prop_file_name = 'initial_condition.csv'
         read_type = 'voronoi'
         nprop = 5 # number of columns in CSV
-        nvoronoi = '${num_file_data}' # number of rows that are considered
+        nvoronoi = '${num_file_data}' # number of rows that are considered\
     []
 []
 
