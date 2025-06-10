@@ -118,6 +118,7 @@ test.cache
 !**/gold/*.pvtu
 !**/gold/*.xml*
 !**/gold/*.json*
+!**/gold/experiment_comp/*.csv
 
 peacock_run_tmp.i
 yaml_dump*
