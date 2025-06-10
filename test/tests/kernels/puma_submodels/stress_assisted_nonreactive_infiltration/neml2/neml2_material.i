@@ -17,19 +17,17 @@
         to = 'state/c'
     []
     [fluid_F]
-        type = PhaseChangeDeformationGradient
+        type = PhaseChangeDeformationGradientJacobian
         phase_fraction = 'state/c'
         CPE = 1e-2
-        deformation_gradient = 'state/Ff'
+        jacobian = 'state/Jf'
         fluid_fraction = 'forces/phif'
-        inverse_condition = true
     []
     [total_F]
-        type = R2Multiplication
-        A = 'forces/F'
-        B = 'state/Ff'
-        to = 'state/Fe'
-        invert_B = false
+        type = VolumeAdjustDeformationGradient
+        input = 'forces/F'
+        output = 'state/Fe'
+        jacobian = 'state/Jf'
     []
     [green_strain]
         type = GreenLagrangeStrain

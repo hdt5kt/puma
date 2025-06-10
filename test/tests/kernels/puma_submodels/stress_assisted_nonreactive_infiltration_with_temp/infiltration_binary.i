@@ -2,7 +2,7 @@
 
 # Simulation parameters
 dt = 5 #s
-total_time = 20000 #s
+total_time = 3600 #s
 
 flux_in = 0.1 # volume fraction
 flux_out = 0.1

@@ -16,37 +16,32 @@
         from = 1.0
         to = 'state/c'
     []
-    [fluid_F]
-        type = PhaseChangeDeformationGradient
+    [fluid_JF]
+        type = PhaseChangeDeformationGradientJacobian
         phase_fraction = 'state/c'
         CPE = 1e-2
-        deformation_gradient = 'state/Ff'
+        jacobian = 'state/Jf'
         fluid_fraction = 'forces/phif'
-        inverse_condition = true
-    []
-    [FFf]
-        type = R2Multiplication
-        A = 'forces/F'
-        B = 'state/Ff'
-        to = 'state/FFf'
-        invert_B = false
     []
     # thermal add-on ###########
     [Fthermal]
-        type = ThermalDeformationGradient
+        type = ThermalDeformationGradientJacobian
         temperature = 'forces/T'
         reference_temperature = ${Tref}
         CTE = ${therm_expansion}
-        deformation_gradient = 'state/Ft'
-        inverse_condition = true
+        jacobian = 'state/Jt'
     []
     # -----------------------------
+    [Jtotal]
+        type = ScalarMultiplication
+        from_var = 'state/Jt state/Jf'
+        to_var = 'state/Jtotal'
+    []
     [totalF]
-        type = R2Multiplication
-        A = 'state/FFf'
-        B = 'state/Ft'
-        to = 'state/Fe'
-        invert_B = false
+        type = VolumeAdjustDeformationGradient
+        input = 'forces/F'
+        output = 'state/Fe'
+        jacobian = 'state/Jtotal'
     []
     ########
     [green_strain]
@@ -75,7 +70,7 @@
     []
     [model_pk1]
         type = ComposedModel
-        models = 'no_phase_change fluid_F FFf
+        models = 'no_phase_change fluid_JF Jtotal
                   Fthermal totalF green_strain S_pk2 S_pk2_R2 S_pk1'
         additional_outputs = 'state/Fe'
     []

@@ -64,42 +64,37 @@
     []
     [M1]
         type = ScalarMultiplication
-        coefficient = "${rho_f}"
+        coefficient = '${rho_f}'
         from_var = 'state/J state/cliquid'
         to_var = 'state/M1'
     []
     [fluid_F]
-        type = PhaseChangeDeformationGradient
+        type = PhaseChangeDeformationGradientJacobian
         phase_fraction = 'state/cliquid'
-        CPC = ${dOmegaf}
+        CPC = '${dOmega_f}'
         CPE = '${swelling_coef}'
-        deformation_gradient = 'state/Ff'
+        jacobian = 'state/Jf'
         fluid_fraction = 'forces/phif'
-        inverse_condition = true
-    []
-    [FFf]
-        type = R2Multiplication
-        A = 'forces/F'
-        B = 'state/Ff'
-        to = 'state/FFf'
-        invert_B = false
     []
     # thermal add-on ###########
     [Fthermal]
-        type = ThermalDeformationGradient
+        type = ThermalDeformationGradientJacobian
         temperature = 'forces/T'
         reference_temperature = ${Tref}
         CTE = ${therm_expansion}
-        deformation_gradient = 'state/Ft'
-        inverse_condition = true
+        jacobian = 'state/Jt'
+    []
+    [FFf]
+        type = ScalarMultiplication
+        from_var = 'state/Jt state/Jf'
+        to_var = 'state/Jtotal'
     []
     # -----------------------------
     [totalF]
-        type = R2Multiplication
-        A = 'state/FFf'
-        B = 'state/Ft'
-        to = 'state/Fe'
-        invert_B = false
+        type = VolumeAdjustDeformationGradient
+        input = 'forces/F'
+        output = 'state/Fe'
+        jacobian = 'state/Jtotal'
     []
     ########
     [green_strain]

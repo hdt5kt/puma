@@ -6,9 +6,9 @@ import subprocess
 
 ## Experiment Input
 exp_dat_list = [
-    "experiment_comp/5degpermin_run1.csv",
-    "experiment_comp/10degpermin_run1.csv",
-    "experiment_comp/20degpermin_run1.csv",
+    "gold/experiment_comp/5degpermin_run1.csv",
+    "gold/experiment_comp/10degpermin_run1.csv",
+    "gold/experiment_comp/20degpermin_run1.csv",
 ]
 
 col = ["k", "b", "r", "r", "r"]

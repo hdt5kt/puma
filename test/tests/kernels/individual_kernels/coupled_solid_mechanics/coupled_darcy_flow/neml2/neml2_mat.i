@@ -10,23 +10,22 @@
         from_var = 'forces/T forces/P'
         to_var = 'state/pc'
     []
-    [Fthermal]
-        type = ThermalDeformationGradient
+    [Jtotal]
+        type = ThermalDeformationGradientJacobian
         temperature = 'forces/T'
         reference_temperature = 300
         CTE = 1e-5
-        deformation_gradient = 'state/Fthermal'
+        jacobian = 'state/JFthermal'
     []
     [totalF]
-        type = R2Multiplication
-        A = 'forces/F'
-        B = 'state/Fthermal'
-        to = 'state/Ftotal'
-        invert_B = false
+        type = VolumeAdjustDeformationGradient
+        input = 'forces/F'
+        output = 'state/Fe'
+        jacobian = 'state/JFthermal'
     []
     [green_strain]
         type = GreenLagrangeStrain
-        deformation_gradient = 'state/Ftotal'
+        deformation_gradient = 'state/Fe'
         strain = 'state/Ee'
     []
     [S_pk2]
@@ -50,6 +49,6 @@
     []
     [model]
         type = ComposedModel
-        models = 'Jacobian Fthermal totalF green_strain S_pk2 S_pk2_R2 S_pk1 Pressure'
+        models = 'Jacobian Jtotal totalF green_strain S_pk2 S_pk2_R2 S_pk1 Pressure'
     []
 []
