@@ -12,8 +12,8 @@ from generate_random_field import generate_initial_conditions
 
 pip_cycle_n = 10  # number of pip cycles
 save_folder = "main"
-corenum = 8  # number of cores used for simulation
-puma_run_file = "./../puma-opt"
+corenum = 12  # number of cores used for simulation
+puma_run_file = "./../../puma-opt"
 
 
 # rate of close pore relative to volume of produced solid
@@ -93,8 +93,8 @@ htc = 25
 T0 = 300  # K - starting and cooling temperatures
 Tmax = 1000  # K
 dTdt = 20  # Kmin-1 heating rate
-t_hold = 3  # hrs
-tcool = 3  # hrs
+t_hold = 0.5  # hrs
+tcool = 0.5  # hrs
 
 # Simulation parameters
 dt = 5

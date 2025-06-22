@@ -23,6 +23,7 @@ protected:
   virtual Real computeQpResidual() override;
   virtual Real computeQpJacobian() override;
   virtual Real computeQpOffDiagJacobian(unsigned int jvar) override;
+  virtual RankTwoTensor gradTest(unsigned int component);
 
   unsigned int _component;
 

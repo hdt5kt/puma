@@ -129,7 +129,7 @@
     [solid_volume_fraction]
         type = ScalarMultiplication
         from_var = 'state/ws state/V'
-        constant_coefficient = '${rho_sm1M} 1.0'
+        coefficient = '${rho_sm1M}'
         to_var = 'state/phis'
         reciprocal = 'false true'
     []
@@ -230,28 +230,28 @@
     [phi_b]
         type = ScalarMultiplication
         from_var = 'state/wb state/V'
-        constant_coefficient = '${rho_bm1M} 1.0'
+        coefficient = '${rho_bm1M}'
         to_var = 'state/phib'
         reciprocal = 'false true'
     []
     [phi_s]
         type = ScalarMultiplication
         from_var = 'state/ws state/V'
-        constant_coefficient = '${rho_sm1M} 1.0'
+        coefficient = '${rho_sm1M}'
         to_var = 'state/phis'
         reciprocal = 'false true'
     []
     [phi_p]
         type = ScalarMultiplication
         from_var = 'state/wp state/V'
-        constant_coefficient = '${rho_pm1M} 1.0'
+        coefficient = '${rho_pm1M}'
         to_var = 'state/phip'
         reciprocal = 'false true'
     []
     [phi_gcp]
         type = ScalarMultiplication
         from_var = 'state/wgcp state/V'
-        constant_coefficient = '${rho_gm1M} 1.0'
+        coefficient = '${rho_gm1M}'
         to_var = 'state/phigcp'
         reciprocal = 'false true'
     []

@@ -132,8 +132,8 @@ mu = 0.3
   nl_rel_tol = 1e-8
   nl_max_its = 20
 
-  dt = 1
-  end_time = 1
+  dt = 0.1
+  end_time = 0.1
 []
 
 [Outputs]

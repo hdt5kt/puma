@@ -22,8 +22,8 @@
 /**
  * Interface class to provide common input parameters, members, and methods for the Puma Coupled.
  */
-template <class T>
-class PumaCoupledKernelInterface : public T
+template <class T, class G>
+class PumaCoupledKernelInterface : public T, G
 {
 public:
   static InputParameters validParams();
@@ -76,9 +76,9 @@ private:
   virtual RankTwoTensor gradTrialStabilized(unsigned int component);
 };
 
-template <class T>
+template <class T, class G>
 InputParameters
-PumaCoupledKernelInterface<T>::validParams()
+PumaCoupledKernelInterface<T, G>::validParams()
 {
   InputParameters params = T::validParams();
 
@@ -106,8 +106,8 @@ PumaCoupledKernelInterface<T>::validParams()
   return params;
 }
 
-template <class T>
-PumaCoupledKernelInterface<T>::PumaCoupledKernelInterface(const InputParameters & parameters)
+template <class T, class G>
+PumaCoupledKernelInterface<T, G>::PumaCoupledKernelInterface(const InputParameters & parameters)
   : T(parameters),
     _M(this->template getMaterialProperty<Real>("material_prop")),
     _stabilize_strain(this->template getParam<bool>("stabilize_strain"))
@@ -176,9 +176,9 @@ PumaCoupledKernelInterface<T>::PumaCoupledKernelInterface(const InputParameters 
   }
 }
 
-template <class T>
+template <class T, class G>
 void
-PumaCoupledKernelInterface<T>::precalculateOffDiagJacobian(unsigned int jvar)
+PumaCoupledKernelInterface<T, G>::precalculateOffDiagJacobian(unsigned int jvar)
 {
   if (!_stabilize_strain)
     return;
@@ -192,49 +192,48 @@ PumaCoupledKernelInterface<T>::precalculateOffDiagJacobian(unsigned int jvar)
     }
 }
 
-template <class T>
+template <class T, class G>
 void
-PumaCoupledKernelInterface<T>::precalculateJacobianDisplacement(unsigned int component)
+PumaCoupledKernelInterface<T, G>::precalculateJacobianDisplacement(unsigned int component)
 {
   for (auto j : make_range(this->_phi.size()))
     _avg_grad_trial[component][j] = StabilizationUtils::elementAverage(
         [this, component, j](unsigned int qp)
         {
-          return GradientOperatorCartesian::gradOp(component,
-                                                   (*this->_disp_grad_phi[component])[j][qp],
-                                                   (*this->_disp_phi[component])[j][qp],
-                                                   this->_q_point[qp]);
+          return G::gradOp(component,
+                           (*this->_disp_grad_phi[component])[j][qp],
+                           (*this->_disp_phi[component])[j][qp],
+                           this->_q_point[qp]);
         },
         this->_JxW,
         this->_coord);
 }
 
-template <class T>
+template <class T, class G>
 RankTwoTensor
-PumaCoupledKernelInterface<T>::gradTrial(unsigned int component)
+PumaCoupledKernelInterface<T, G>::gradTrial(unsigned int component)
 {
   return _stabilize_strain ? gradTrialStabilized(component) : gradTrialUnstabilized(component);
 }
 
-template <class T>
+template <class T, class G>
 RankTwoTensor
-PumaCoupledKernelInterface<T>::gradTrialUnstabilized(unsigned int component)
+PumaCoupledKernelInterface<T, G>::gradTrialUnstabilized(unsigned int component)
 {
-  return GradientOperatorCartesian::gradOp(component,
-                                           (*this->_disp_grad_phi[component])[this->_j][this->_qp],
-                                           (*this->_disp_phi[component])[this->_j][this->_qp],
-                                           this->_q_point[this->_qp]);
+  return G::gradOp(component,
+                   (*this->_disp_grad_phi[component])[this->_j][this->_qp],
+                   (*this->_disp_phi[component])[this->_j][this->_qp],
+                   this->_q_point[this->_qp]);
 }
 
-template <class T>
+template <class T, class G>
 RankTwoTensor
-PumaCoupledKernelInterface<T>::gradTrialStabilized(unsigned int component)
+PumaCoupledKernelInterface<T, G>::gradTrialStabilized(unsigned int component)
 {
-  const auto Gb =
-      GradientOperatorCartesian::gradOp(component,
-                                        (*this->_disp_grad_phi[component])[this->_j][this->_qp],
-                                        (*this->_disp_phi[component])[this->_j][this->_qp],
-                                        this->_q_point[this->_qp]);
+  const auto Gb = G::gradOp(component,
+                            (*this->_disp_grad_phi[component])[this->_j][this->_qp],
+                            (*this->_disp_phi[component])[this->_j][this->_qp],
+                            this->_q_point[this->_qp]);
   const auto Ga = _avg_grad_trial[component][this->_j];
 
   const Real dratio = std::pow((*_F_avg)[this->_qp].det() / (*_F_ust)[this->_qp].det(), 1.0 / 3.0);

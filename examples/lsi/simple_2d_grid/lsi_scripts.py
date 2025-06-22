@@ -1,7 +1,7 @@
 import numpy as np
 import subprocess
 import os
-from examples.lsi.simple_2d_grid.generate_initial_condition import (
+from generate_initial_condition import (
     generate_initial_conditions,
 )
 
@@ -14,7 +14,7 @@ from examples.lsi.simple_2d_grid.generate_initial_condition import (
 
 save_folder = "main"
 corenum = 8  # number of cores used for simulation
-puma_run_file = "./../../puma-opt"
+puma_run_file = "./../../../puma-opt"
 
 ########################### parts and geometry information ####################################
 # geometry
@@ -211,6 +211,8 @@ if run_infiltration:
 print("\n")
 
 print("Starting Solidification")
+
+fdas
 
 proc2 = subprocess.Popen(
     [

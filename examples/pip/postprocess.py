@@ -6,9 +6,9 @@ import os
 
 ## INPUT INFORMATION ------------------------------------------------------
 
-postprocess_folder = "test_solid_mechanics"
+postprocess_folder = "main"
 base_file = "out_cycle"
-plotfolder = "test_solid_mechanics/postprocess_results"
+plotfolder = "main/postprocess_results"
 
 E = 400e9
 
@@ -152,5 +152,5 @@ ax[2].set_xlim((0, i + 1))
 
 fig.tight_layout()
 
-plt.savefig(plotfolder + "/out.png")
+plt.savefig(plotfolder + "/out.png", dpi=300)
 plt.show()

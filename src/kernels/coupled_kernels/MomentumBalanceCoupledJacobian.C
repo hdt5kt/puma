@@ -99,15 +99,28 @@ MomentumBalanceCoupledJacobian::computeQpOffDiagJacobian(unsigned int jvar)
 {
   if (isCoupled("temperature"))
     if (jvar == _T_id)
-      return _grad_test[_i][_qp] * (*_dSdT)[_qp].row(_component) * (*_T_phi)[_j][_qp];
+      // return _grad_test[_i][_qp] * (*_dSdT)[_qp].row(_component) * (*_T_phi)[_j][_qp];
+      return gradTest(_component).row(_component) * (*_dSdT)[_qp].row(_component) *
+             (*_T_phi)[_j][_qp];
 
   if (isCoupled("pressure"))
     if (jvar == _P_id)
-      return _grad_test[_i][_qp] * (*_dSdP)[_qp].row(_component) * (*_P_phi)[_j][_qp];
+      // return _grad_test[_i][_qp] * (*_dSdP)[_qp].row(_component) * (*_P_phi)[_j][_qp];
+      return gradTest(_component).row(_component) * (*_dSdP)[_qp].row(_component) *
+             (*_P_phi)[_j][_qp];
 
   if (isCoupled("fluid_fraction"))
     if (jvar == _vf_id)
-      return _grad_test[_i][_qp] * (*_dSdvf)[_qp].row(_component) * (*_vf_phi)[_j][_qp];
+      // return _grad_test[_i][_qp] * (*_dSdvf)[_qp].row(_component) * (*_vf_phi)[_j][_qp];
+      return gradTest(_component).row(_component) * (*_dSdvf)[_qp].row(_component) *
+             (*_vf_phi)[_j][_qp];
 
   return 0.0;
+}
+
+RankTwoTensor
+MomentumBalanceCoupledJacobian::gradTest(unsigned int component)
+{
+  return GradientOperatorCartesian::gradOp(
+      component, _grad_test[_i][_qp], _test[_i][_qp], _q_point[_qp]);
 }
