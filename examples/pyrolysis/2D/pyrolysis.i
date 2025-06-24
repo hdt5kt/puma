@@ -1,9 +1,9 @@
 ############### Input ################
 # Simulation parameters
 dt = 5
-nx = 50
-ny = 50
-xmax = 0.1
+nx = 10
+ny = 10
+xmax = 0.5
 
 # denisty kgm-3
 rho_s = 2100
@@ -17,61 +17,55 @@ cp_g = 1e-4
 cp_p = 750
 
 # thermal conductivity W/m-1K-1
-k_s = 1.5
-k_b = 0.279
+k_s = 150
+k_b = 279
 k_g = 1e-4
 k_p = 380 #120 and 490
 
 # reaction type
-Ea = 41220 # 177820 # J mol-1
-A = 1.24e4 # 5.24e12 # s-1
+Ea = 21191.61425 # 177820 # J mol-1
+A = 0.0421047 # 5.24e12 # s-1
 R = 8.31446261815324 # JK-1mol-1
-hrp = 1.58e6 # J kg-1
+hrp = 1.58e5 # J kg-1
 
 Y = 0.575
-invYm1 = '${fparse 1-1/Y}' # 1-1/Y
-
 order = 1.0
-order_k = 0.00015
-factor = 1.0
 
 # models
-cp_to_wg_relation = 0.001
-op_to_solid_relation = 0.1
+pyro_mu = 0.015 # wgcp vs wg
+zeta = 0.03 # phiop vs wbdot
 rho_g = 13 #kgm-3
 
 # initial condition
-ms0 = 1
+ms0 = 3.0
 mb0 = 10
-mp0 = 3
-mg0 = 0.001
+mp0 = 5.0
+mg0 = 0.0
 mgcp0 = '${fparse mg0}'
 phiop0 = 0.001 #void fraction
 T0 = 300 #K
 
 # calculations
 Mref = '${fparse ms0 + mb0 + mp0 + mg0}'
-V0 = '${fparse (ms0/rho_s + mb0/rho_b + mp0/rho_p + mgcp0/rho_g)/(1 - phiop0)}'
 wb0 = '${fparse mb0/Mref}'
 ws0 = '${fparse ms0/Mref}'
 wp0 = '${fparse mp0/Mref}'
 wgcp0 = '${fparse mgcp0/Mref}'
-phis0 = '${fparse ws0*Mref/(rho_s*V0)}'
-alpha0 = '${fparse 1/(1-Y)}' # 1/(1-Y)
+V0 = '${fparse (ms0/rho_s + mb0/rho_b + mp0/rho_p + mgcp0/rho_g)/(1 - phiop0)}'
+alpha0 = 0.0 # initial reaction progress
 
 Tmax = 1000 #K
 dTdt = 20 #Kmin-1 heating rate
 t_ramp = '${fparse (Tmax-T0)/dTdt*60}' #s
-t_hold = 3 #hrs
+t_hold = 2 #hrs
 theat = '${fparse t_ramp+t_hold*3600}'
-tcool = 3 #hrs
+tcool = 2 #hrs
 dTdtcool = '${fparse (Tmax-T0)/(tcool*3600)}' #Ks-1
 
 total_time = '${fparse theat + tcool*3600}'
 
 #### stress-strain ####
 E = 400e9
-mu = 0.3
 
 # thermal expansion coefficients (degree-1)
 Tref = 300 #K
@@ -81,6 +75,8 @@ g = 4e-6
 htc = 200 #Wm-2K assume air doesnt move much
 
 [GlobalParams]
+    temperature = 'T'
+    stabilize_strain = true
     displacements = 'disp_x disp_y'
 []
 
@@ -99,24 +95,40 @@ htc = 200 #Wm-2K assume air doesnt move much
 []
 
 [Kernels]
-    [heat_eq]
-        type = PumaDiffusion
-        diffusivity = K
-        diffusivity_derivative = neml2_dKdT
+    ## Temperature flow ---------------------------------------------------------
+    [temp_time]
+        type = PumaCoupledTimeDerivative
+        material_prop = M1
         variable = T
+        material_temperature_derivative = dM1dT
+        material_deformation_gradient_derivative = zeroR2
     []
-    [time_dot]
-        type = PumaTimeDerivative
+    [temp_diffusion]
+        type = PumaCoupledDiffusion
+        material_prop = M2
         variable = T
-        material_prop = rhocp
-        material_prop_derivative = neml2_drhocpdT
+        material_temperature_derivative = dM2dT
+        material_deformation_gradient_derivative = zeroR2
     []
     [reaction_heat]
-        type = MaterialSource
-        prop = alphadot
-        prop_derivative = neml2_dalphadotdT
-        coefficient = '${fparse -factor*rho_s*hrp}'
+        type = CoupledMaterialSource
+        material_prop = M3
         variable = T
+        material_temperature_derivative = dM3dT
+        material_deformation_gradient_derivative = zeroR2
+    []
+    ## solid mechanics ---------------------------------------------------------
+    [offDiagStressDiv_x]
+        type = MomentumBalanceCoupledJacobian
+        component = 0
+        variable = disp_x
+        material_temperature_derivative = dpk1dT
+    []
+    [offDiagStressDiv_y]
+        type = MomentumBalanceCoupledJacobian
+        component = 1
+        variable = disp_y
+        material_temperature_derivative = dpk1dT
     []
 []
 
@@ -126,88 +138,75 @@ htc = 200 #Wm-2K assume air doesnt move much
             [sample]
                 new_system = true
                 add_variables = true
-                strain = SMALL
+                strain = FINITE
                 formulation = TOTAL
                 volumetric_locking_correction = true
-                generate_output = "cauchy_stress_xx cauchy_stress_yy cauchy_stress_zz
-                                cauchy_stress_xy cauchy_stress_xz cauchy_stress_yz
-                                mechanical_strain_xx mechanical_strain_yy mechanical_strain_zz
-                                mechanical_strain_xy mechanical_strain_xz mechanical_strain_yz"
-                additional_generate_output = 'vonmises_cauchy_stress'
+                generate_output = "pk1_stress_xx pk1_stress_yy pk1_stress_zz 
+                                    pk1_stress_xy pk1_stress_xz pk1_stress_yz vonmises_pk1_stress"
             []
         []
     []
 []
 
 [NEML2]
-    input = 'neml2/PR_pyrolysis.i'
+    input = 'neml2/neml2_material.i'
     cli_args = 'rho_s=${rho_s} rho_b=${rho_b} rho_g=${rho_g} rho_p=${rho_p} Mref=${Mref}
                 rho_sm1M=${fparse Mref/rho_s} rho_bm1M=${fparse Mref/rho_b}
                 rho_gm1M=${fparse Mref/rho_g} rho_pm1M=${fparse Mref/rho_p}
                 cp_s=${cp_s} cp_b=${cp_b} cp_g=${cp_g} cp_p=${cp_p}
                 k_s=${k_s} k_b=${k_b} k_g=${k_g} k_p=${k_p}
-                Ea=${Ea} A=${A} R=${R} Y=${Y} invYm1=${invYm1}
-                order=${order} order_k=${order_k} hrp=${hrp}
-                cp_to_wg_relation=${cp_to_wg_relation} op_to_solid_relation=${op_to_solid_relation}
-                ws0=${ws0} wb0=${wb0} alpha0=${alpha0} Tref=${Tref} E=${E} g=${g} mu=${mu}'
+                Ea=${Ea} A=${A} R=${R} mY=${fparse -Y}
+                order=${order} source_coeff=${fparse -rho_s*hrp}
+                mu=${pyro_mu} mzeta=${fparse -zeta}
+                ws0=${ws0} wb0=${wb0} E=${E} g=${g} E=${E} Tref=${Tref}'
     [all]
         model = 'model'
         verbose = true
         device = 'cpu'
 
-        moose_input_types = 'VARIABLE     POSTPROCESSOR POSTPROCESSOR MATERIAL        MATERIAL
-                             MATERIAL     MATERIAL      MATERIAL      MATERIAL        MATERIAL
-                             MATERIAL     MATERIAL      MATERIAL      MATERIAL        MATERIAL
-                             MATERIAL     MATERIAL      MATERIAL      MATERIAL'
-        moose_inputs = '     T            time          time          alpha           phis
-                             wb           wp            ws            wgcp            phiop
-                             wb           wp            ws            wgcp            phiop
-                             eps_Ev       eps_Ev        neml2_strain  V'
-        neml2_inputs = '     forces/T     forces/tt     old_forces/tt old_state/alpha old_state/phis
-                             state/wb     state/wp      state/ws      state/wgcp      state/phiop
-                             old_state/wb old_state/wp  old_state/ws  old_state/wgcp  old_state/phiop
-                             state/Ev     old_state/Ev  forces/eps    old_state/V'
+        moose_input_types = 'VARIABLE     POSTPROCESSOR POSTPROCESSOR   MATERIAL        MATERIAL
+                             MATERIAL     MATERIAL      MATERIAL        MATERIAL        MATERIAL'
+        moose_inputs = '     T            time          time            alpha           alpha
+                             wb           ws            wgcp            phiop           deformation_gradient'
+        neml2_inputs = '     forces/T     forces/t      old_forces/t    old_state/alpha state/alpha
+                             old_state/wb old_state/ws  old_state/wgcp  old_state/phiop forces/F'
+
+        moose_parameter_types = 'MATERIAL        MATERIAL        MATERIAL'
+        moose_parameters = '     wp              mwb0            o_Vref'
+        neml2_parameters = '     wp_state_param  binder_rate_c_0 Jvolume_c_0'
 
         moose_output_types = 'MATERIAL        MATERIAL   MATERIAL   MATERIAL     MATERIAL
                               MATERIAL        MATERIAL   MATERIAL   MATERIAL     MATERIAL
-                              MATERIAL        MATERIAL   MATERIAL   MATERIAL
-                              MATERIAL        MATERIAL'
-        moose_outputs = '     wb              wp         ws         wgcp         phiop
+                              MATERIAL        MATERIAL   MATERIAL   MATERIAL     MATERIAL'
+        moose_outputs = '     phiop           wb         ws         wgcp         pk1_stress
                               phib            phip       phis       phigcp       alpha
-                              alphadot       K          V          rhocp
-                              neml2_stress    eps_Ev'
-        neml2_outputs = '     state/wb        state/wp   state/ws   state/wgcp   state/phiop
+                              M3              M2         M1         Jt           Jv'
+        neml2_outputs = '     state/phiop     state/wb   state/ws   state/wgcp   state/pk1
                               state/phib      state/phip state/phis state/phigcp state/alpha
-                              state/alpha_dot state/K    state/V    state/rhocp
-                              state/sigma     state/Ev'
+                              state/M3        state/M2   state/M1   state/Jt     state/Jv'
 
-        moose_derivative_types = 'MATERIAL                  MATERIAL              MATERIAL
-                                  MATERIAL'
-        moose_derivatives = '     neml2_dalphadotdT         neml2_drhocpdT        neml2_dKdT
-                                  neml2_dsigdeps'
-        neml2_derivatives = '     state/alpha_dot forces/T; state/rhocp forces/T; state/K forces/T;
-                                  state/sigma forces/eps'
+        moose_derivative_types = 'MATERIAL            MATERIAL              MATERIAL
+                                  MATERIAL            MATERIAL'
+        moose_derivatives = '     dM3dT               dM1dT                 dM2dT
+                                  dpk1dT              pk1_jacobian'
+        neml2_derivatives = '     state/M3 forces/T;  state/M1 forces/T;    state/M2 forces/T;
+                                  state/pk1 forces/T; state/pk1 forces/F'
 
-        initialize_outputs = '      wp  wb  wgcp  ws  alpha  phis  phiop  V eps_Ev'
-        initialize_output_values = 'wp0 wb0 wgcp0 ws0 alpha0 phis0 phiop0 V0 eps_Ev0'
+        initialize_outputs = '      wb  wgcp  ws  alpha  phiop'
+        initialize_output_values = 'wb0 wgcp0 ws0 alpha0 phiop0'
     []
 []
 
 [Materials]
+    [zeroR2]
+        type = GenericConstantRankTwoTensor
+        tensor_name = 'zeroR2'
+        tensor_values = '0 0 0 0 0 0 0 0 0'
+    []
     [init_mat]
         type = GenericConstantMaterial
-        prop_names = 'wp0 wb0 wgcp0 ws0 alpha0 phis0 phiop0 V0 eps_Ev0'
-        prop_values = '${wp0} ${wb0} ${wgcp0} ${ws0} ${alpha0} ${phis0} ${phiop0} ${V0} 0.0'
-    []
-    [convert_strain]
-        type = RankTwoTensorToSymmetricRankTwoTensor
-        from = 'total_strain'
-        to = 'neml2_strain'
-    []
-    [stress]
-        type = ComputeLagrangianObjectiveCustomSymmetricStress
-        custom_small_stress = 'neml2_stress'
-        custom_small_jacobian = 'neml2_dsigdeps'
+        prop_names = 'wp wb0 wgcp0 ws0 alpha0 phiop0 mwb0 o_Vref'
+        prop_values = '${wp0} ${wb0} ${wgcp0} ${ws0} ${alpha0} ${phiop0} ${fparse -wb0} ${fparse 1/V0}'
     []
     [convection]
         type = ADParsedMaterial
@@ -229,42 +228,6 @@ htc = 200 #Wm-2K assume air doesnt move much
 []
 
 [AuxVariables]
-    [wb]
-        order = CONSTANT
-        family = MONOMIAL
-        [AuxKernel]
-            type = MaterialRealAux
-            property = wb
-            execute_on = 'INITIAL TIMESTEP_END'
-        []
-    []
-    [wp]
-        order = CONSTANT
-        family = MONOMIAL
-        [AuxKernel]
-            type = MaterialRealAux
-            property = wp
-            execute_on = 'INITIAL TIMESTEP_END'
-        []
-    []
-    [ws]
-        order = CONSTANT
-        family = MONOMIAL
-        [AuxKernel]
-            type = MaterialRealAux
-            property = ws
-            execute_on = 'INITIAL TIMESTEP_END'
-        []
-    []
-    [wgcp]
-        order = CONSTANT
-        family = MONOMIAL
-        [AuxKernel]
-            type = MaterialRealAux
-            property = wgcp
-            execute_on = 'INITIAL TIMESTEP_END'
-        []
-    []
     [phib]
         order = CONSTANT
         family = MONOMIAL
@@ -307,6 +270,60 @@ htc = 200 #Wm-2K assume air doesnt move much
         [AuxKernel]
             type = MaterialRealAux
             property = phiop
+            execute_on = 'INITIAL TIMESTEP_END'
+        []
+    []
+    [wb]
+        order = CONSTANT
+        family = MONOMIAL
+        [AuxKernel]
+            type = MaterialRealAux
+            property = wb
+            execute_on = 'INITIAL TIMESTEP_END'
+        []
+    []
+    [ws]
+        order = CONSTANT
+        family = MONOMIAL
+        [AuxKernel]
+            type = MaterialRealAux
+            property = ws
+            execute_on = 'INITIAL TIMESTEP_END'
+        []
+    []
+    [heatsource]
+        order = CONSTANT
+        family = MONOMIAL
+        [AuxKernel]
+            type = MaterialRealAux
+            property = M3
+            execute_on = 'INITIAL TIMESTEP_END'
+        []
+    []
+    [alpha]
+        order = CONSTANT
+        family = MONOMIAL
+        [AuxKernel]
+            type = MaterialRealAux
+            property = alpha
+            execute_on = 'INITIAL TIMESTEP_END'
+        []
+    []
+    [Jt]
+        order = CONSTANT
+        family = MONOMIAL
+        [AuxKernel]
+            type = MaterialRealAux
+            property = Jt
+            execute_on = 'INITIAL TIMESTEP_END'
+        []
+    []
+    [Jv]
+        order = CONSTANT
+        family = MONOMIAL
+        [AuxKernel]
+            type = MaterialRealAux
+            property = Jv
             execute_on = 'INITIAL TIMESTEP_END'
         []
     []
@@ -361,7 +378,7 @@ htc = 200 #Wm-2K assume air doesnt move much
     nl_abs_tol = 1e-8
 
     end_time = ${total_time}
-    dtmax = '${fparse 20*dt}'
+    dtmax = '${fparse 50*dt}'
 
     [TimeStepper]
         type = IterationAdaptiveDT

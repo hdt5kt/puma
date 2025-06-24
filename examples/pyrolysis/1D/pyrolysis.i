@@ -1,7 +1,6 @@
 ############### Input ################
 # Simulation parameters
 dt = 20
-total_time = '${fparse 3600*1.75}'
 nx = 200
 
 # denisty kgm-3
@@ -16,34 +15,31 @@ cp_g = 1e-4
 cp_p = 750
 
 # thermal conductivity W/m-1K-1
-k_s = 1.5
-k_b = 0.279
+k_s = 150
+k_b = 279
 k_g = 1e-4
 k_p = 380 #120 and 490
 
 # reaction type
-Ea = 41220 # 177820 # J mol-1
-A = 1.24e4 # 5.24e12 # s-1
+Ea = 21191.61425 # 177820 # J mol-1
+A = 0.0421047 # 5.24e12 # s-1
 R = 8.31446261815324 # JK-1mol-1
-hrp = 1.58e6 # J kg-1
+hrp = 1.58e5 # J kg-1
 
 Y = 0.575
-invYm1 = '${fparse 1-1/Y}' # 1-1/Y
 
 order = 1.0
-order_k = 0.00015
-factor = 1.0
 
 # models
-cp_to_wg_relation = 0.001
-op_to_solid_relation = 0.1
+pyro_mu = 0.05 # wgcp vs wg
+zeta = 0.05 # phiop vs alphadot
 rho_g = 13 #kgm-3
 
 # initial condition
-ms0 = 1
+ms0 = 3.0
 mb0 = 10
-mp0 = 3
-mg0 = 0.001
+mp0 = 5.0
+mg0 = 0.0
 mgcp0 = '${fparse mg0}'
 phiop0 = 0.001 #void fraction
 T0 = 300 #K
@@ -51,21 +47,25 @@ T0 = 300 #K
 # calculations
 
 Mref = '${fparse ms0 + mb0 + mp0 + mg0}'
-V0 = '${fparse (ms0/rho_s + mb0/rho_b + mp0/rho_p + mgcp0/rho_g)/(1 - phiop0)}'
 wb0 = '${fparse mb0/Mref}'
 ws0 = '${fparse ms0/Mref}'
 wp0 = '${fparse mp0/Mref}'
 wgcp0 = '${fparse mgcp0/Mref}'
-phis0 = '${fparse ws0*Mref/(rho_s*V0)}'
-alpha0 = '${fparse 1/(1-Y)}' # 1/(1-Y)
 
-Tmax = 1000 #K
+alpha0 = 0.0 # initial reaction progress
+
+Tmax = 1100 #K
 # Tref = 300 #K
 
 dTdt = 10 #Kmin-1 heating rate
 t_ramp = '${fparse (Tmax-T0)/dTdt*60}' #s
+total_time = '${fparse t_ramp*2}' #'${fparse 3600*1.75}'
 
-xmax = 1.0
+xmax = 2.0
+
+[GlobalParams]
+    temperature = 'T'
+[]
 
 [Mesh]
     type = GeneratedMesh
@@ -80,77 +80,78 @@ xmax = 1.0
 []
 
 [Kernels]
-    [heat_eq]
-        type = PumaDiffusion
-        diffusivity = K
-        diffusivity_derivative = neml2_dKdT
+    ## Temperature flow ---------------------------------------------------------
+    [temp_time]
+        type = PumaCoupledTimeDerivative
+        material_prop = M1
         variable = T
+        material_temperature_derivative = dM1dT
     []
-    [time_dot]
-        type = PumaTimeDerivative
+    [temp_diffusion]
+        type = PumaCoupledDiffusion
+        material_prop = M2
         variable = T
-        material_prop = rhocp
-        material_prop_derivative = neml2_drhocpdT
+        material_temperature_derivative = dM2dT
     []
     [reaction_heat]
-        type = MaterialSource
-        prop = alphadot
-        prop_derivative = neml2_dalphadotdT
-        coefficient = '${fparse -factor*rho_s*hrp}'
+        type = CoupledMaterialSource
+        material_prop = M3
         variable = T
+        material_temperature_derivative = dM3dT
     []
 []
 
 [NEML2]
-    input = 'neml2/PR_pyrolysis.i'
+    input = 'neml2/neml2_material.i'
     cli_args = 'rho_s=${rho_s} rho_b=${rho_b} rho_g=${rho_g} rho_p=${rho_p} Mref=${Mref}
                 rho_sm1M=${fparse Mref/rho_s} rho_bm1M=${fparse Mref/rho_b}
                 rho_gm1M=${fparse Mref/rho_g} rho_pm1M=${fparse Mref/rho_p}
                 cp_s=${cp_s} cp_b=${cp_b} cp_g=${cp_g} cp_p=${cp_p}
                 k_s=${k_s} k_b=${k_b} k_g=${k_g} k_p=${k_p}
-                Ea=${Ea} A=${A} R=${R} Y=${Y} invYm1=${invYm1}
-                order=${order} order_k=${order_k} hrp=${hrp}
-                cp_to_wg_relation=${cp_to_wg_relation} op_to_solid_relation=${op_to_solid_relation}
-                ws0=${ws0} wb0=${wb0} alpha0=${alpha0}'
+                Ea=${Ea} A=${A} R=${R} mY=${fparse -Y}
+                order=${order} source_coeff=${fparse -rho_s*hrp}
+                mu=${pyro_mu} mzeta=${fparse -zeta}
+                ws0=${ws0} wb0=${wb0}'
     [all]
         model = 'model'
         verbose = true
         device = 'cpu'
 
-        moose_input_types = 'VARIABLE     POSTPROCESSOR POSTPROCESSOR MATERIAL        MATERIAL
-                             MATERIAL     MATERIAL      MATERIAL      MATERIAL        MATERIAL
-                             MATERIAL     MATERIAL      MATERIAL      MATERIAL        MATERIAL'
-        moose_inputs = '     T            time          time          alpha           phis
-                             wb           wp            ws            wgcp            phiop
-                             wb           wp            ws            wgcp            phiop'
-        neml2_inputs = '     forces/T     forces/tt     old_forces/tt old_state/alpha old_state/phis
-                             state/wb     state/wp      state/ws      state/wgcp      state/phiop
-                             old_state/wb old_state/wp  old_state/ws  old_state/wgcp  old_state/phiop'
+        moose_input_types = 'VARIABLE     POSTPROCESSOR POSTPROCESSOR   MATERIAL        MATERIAL
+                             MATERIAL     MATERIAL      MATERIAL        MATERIAL'
+        moose_inputs = '     T            time          time            alpha           alpha
+                             wb           ws            wgcp            phiop'
+        neml2_inputs = '     forces/T     forces/t      old_forces/t    old_state/alpha  state/alpha
+                             old_state/wb old_state/ws  old_state/wgcp  old_state/phiop'
 
-        moose_output_types = 'MATERIAL        MATERIAL   MATERIAL   MATERIAL     MATERIAL
+        moose_parameter_types = 'MATERIAL        MATERIAL        '
+        moose_parameters = '     wp              mwb0            '
+        neml2_parameters = '     wp_state_param  binder_rate_c_0 '
+
+        moose_output_types = 'MATERIAL        MATERIAL   MATERIAL   MATERIAL
                               MATERIAL        MATERIAL   MATERIAL   MATERIAL     MATERIAL
                               MATERIAL        MATERIAL   MATERIAL   MATERIAL'
-        moose_outputs = '     wb              wp         ws         wgcp         phiop
+        moose_outputs = '     phiop           wb         ws         wgcp
                               phib            phip       phis       phigcp       alpha
-                              alphadot        K          V          rhocp'
-        neml2_outputs = '     state/wb        state/wp   state/ws   state/wgcp   state/phiop
+                              M3              M2         V          M1'
+        neml2_outputs = '     state/phiop     state/wb   state/ws   state/wgcp
                               state/phib      state/phip state/phis state/phigcp state/alpha
-                              state/alpha_dot state/K    state/V    state/rhocp'
+                              state/M3        state/M2   state/V    state/M1'
 
-        moose_derivative_types = 'MATERIAL                  MATERIAL              MATERIAL'
-        moose_derivatives = '     neml2_dalphadotdT         neml2_drhocpdT        neml2_dKdT'
-        neml2_derivatives = '     state/alpha_dot forces/T; state/rhocp forces/T; state/K forces/T'
+        moose_derivative_types = 'MATERIAL           MATERIAL              MATERIAL'
+        moose_derivatives = '     dM3dT              dM1dT                 dM2dT'
+        neml2_derivatives = '     state/M3 forces/T; state/M1 forces/T;    state/M2 forces/T'
 
-        initialize_outputs = '      wp  wb  wgcp  ws  alpha  phis  phiop'
-        initialize_output_values = 'wp0 wb0 wgcp0 ws0 alpha0 phis0 phiop0'
+        initialize_outputs = '      wb  wgcp  ws  alpha  phiop'
+        initialize_output_values = 'wb0 wgcp0 ws0 alpha0 phiop0'
     []
 []
 
 [Materials]
     [init_mat]
         type = GenericConstantMaterial
-        prop_names = 'wp0 wb0 wgcp0 ws0 alpha0 phis0 phiop0'
-        prop_values = '${wp0} ${wb0} ${wgcp0} ${ws0} ${alpha0} ${phis0} ${phiop0}'
+        prop_names = 'wp wb0 wgcp0 ws0 alpha0 phiop0 mwb0'
+        prop_values = '${wp0} ${wb0} ${wgcp0} ${ws0} ${alpha0} ${phiop0} ${fparse -wb0}'
     []
 []
 
@@ -162,42 +163,6 @@ xmax = 1.0
 []
 
 [AuxVariables]
-    [wb]
-        order = CONSTANT
-        family = MONOMIAL
-        [AuxKernel]
-            type = MaterialRealAux
-            property = wb
-            execute_on = 'INITIAL TIMESTEP_END'
-        []
-    []
-    [wp]
-        order = CONSTANT
-        family = MONOMIAL
-        [AuxKernel]
-            type = MaterialRealAux
-            property = wp
-            execute_on = 'INITIAL TIMESTEP_END'
-        []
-    []
-    [ws]
-        order = CONSTANT
-        family = MONOMIAL
-        [AuxKernel]
-            type = MaterialRealAux
-            property = ws
-            execute_on = 'INITIAL TIMESTEP_END'
-        []
-    []
-    [wgcp]
-        order = CONSTANT
-        family = MONOMIAL
-        [AuxKernel]
-            type = MaterialRealAux
-            property = wgcp
-            execute_on = 'INITIAL TIMESTEP_END'
-        []
-    []
     [phib]
         order = CONSTANT
         family = MONOMIAL
@@ -243,6 +208,51 @@ xmax = 1.0
             execute_on = 'INITIAL TIMESTEP_END'
         []
     []
+    [wb]
+        order = CONSTANT
+        family = MONOMIAL
+        [AuxKernel]
+            type = MaterialRealAux
+            property = wb
+            execute_on = 'INITIAL TIMESTEP_END'
+        []
+    []
+    [ws]
+        order = CONSTANT
+        family = MONOMIAL
+        [AuxKernel]
+            type = MaterialRealAux
+            property = ws
+            execute_on = 'INITIAL TIMESTEP_END'
+        []
+    []
+    [heatsource]
+        order = CONSTANT
+        family = MONOMIAL
+        [AuxKernel]
+            type = MaterialRealAux
+            property = M3
+            execute_on = 'INITIAL TIMESTEP_END'
+        []
+    []
+    [V]
+        order = CONSTANT
+        family = MONOMIAL
+        [AuxKernel]
+            type = MaterialRealAux
+            property = V
+            execute_on = 'INITIAL TIMESTEP_END'
+        []
+    []
+    [alpha]
+        order = CONSTANT
+        family = MONOMIAL
+        [AuxKernel]
+            type = MaterialRealAux
+            property = alpha
+            execute_on = 'INITIAL TIMESTEP_END'
+        []
+    []
 []
 
 [VectorPostprocessors]
@@ -252,7 +262,7 @@ xmax = 1.0
         num_points = ${nx}
         sort_by = 'x'
         start_point = '0 0 0'
-        variable = 'T wb wp ws wgcp phib phip phis phiop phigcp'
+        variable = 'T phib phip phis phiop phigcp heatsource V wb ws alpha'
     []
 []
 
@@ -279,12 +289,6 @@ xmax = 1.0
         variable = T
         function = tramp
     []
-    [right]
-        type = FunctionDirichletBC
-        boundary = right
-        variable = T
-        function = tramp
-    []
 []
 
 [Executioner]
@@ -297,7 +301,7 @@ xmax = 1.0
     nl_abs_tol = 1e-8
 
     end_time = ${total_time}
-    dtmax = '${fparse 1*dt}'
+    dtmax = '${fparse 10*dt}'
 
     [TimeStepper]
         type = IterationAdaptiveDT

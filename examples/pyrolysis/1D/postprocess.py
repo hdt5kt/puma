@@ -29,13 +29,13 @@ sm = cm.ScalarMappable(norm=norm, cmap="rainbow")
 ### Main ---------------------------------------------------------------------
 
 id = ["temp_mass", "volume_fraction"]
-idlist = [["T", "ws", "wp", "wb"], ["phiop", "phis", "phib", "phigcp"]]
+idlist = [["T", "wb", "heatsource", "ws"], ["phiop", "phis", "phib", "phigcp"]]
 idy = [
     [
         "temperature (K)",
-        "solid weight fraction",
-        "particle weight fraction",
         "binder weight fraction",
+        "heat source",
+        "solid weight fraction",
     ],
     [
         "open pore volume fraction",
