@@ -63,9 +63,9 @@
     []
     ## solid mechanics ----------------------------------------------------------
     [Jacobian]
-        type = DeformationGradientJacobian
-        deformation_gradient = 'forces/F'
-        jacobian = 'state/J'
+        type = R2Determinant
+        input = 'forces/F'
+        determinant = 'state/J'
     []
     [M1]
         type = ScalarMultiplication
@@ -74,16 +74,16 @@
         to_var = 'state/M1'
     []
     [fluid_F]
-        type = PhaseChangeDeformationGradientJacobian
+        type = SwellingAndPhaseChangeDeformationJacobian
         phase_fraction = 'state/cliquid'
-        CPE = '${swelling_coef}'
-        CPC = '${dOmega_f}'
+        swelling_coefficient = '${swelling_coef}'
+        reference_volume_difference = '${dOmega_f}'
         jacobian = 'state/Jf'
         fluid_fraction = 'state/phif'
     []
     # thermal add-on ###########
     [Fthermal]
-        type = ThermalDeformationGradientJacobian
+        type = ThermalDeformationJacobian
         temperature = 'forces/T'
         reference_temperature = ${Tref}
         CTE = ${therm_expansion}

@@ -14,7 +14,7 @@
     ###                                                          ###
     ################################################################
     [outer_radius]
-        type = ProductGeometry
+        type = CylindricalChannelGeometry
         solid_fraction = 'state/phis'
         product_fraction = 'state/phip'
         inner_radius = 'state/ri'
@@ -121,7 +121,7 @@
     ################################################################
     # get the source term
     [outer_radius_new]
-        type = ProductGeometry
+        type = CylindricalChannelGeometry
         solid_fraction = 'state/phis'
         product_fraction = 'state/phip'
         inner_radius = 'state/ri'
@@ -198,14 +198,14 @@
         type = PowerLawPermeability
         reference_permeability = ${kk_L}
         reference_porosity = 0.9
-        power = ${permeability_power}
+        exponent = ${permeability_power}
         porosity = 'state/phif_max'
         permeability = 'state/perm'
     []
     [effective_saturation]
         type = EffectiveSaturation
-        residual_volume_fraction = 0.00001
-        flow_fraction = 'forces/phif'
+        residual_saturation = 0.00001
+        fluid_fraction = 'forces/phif'
         max_fraction = 'state/phif_max'
         effective_saturation = 'state/Seff'
     []
@@ -221,13 +221,14 @@
         from_var = 'state/perm state/Seff'
         to_var = 'state/M4'
     []
-    [capillary_pressure]
-        type = BrooksCoreyPressure
+       [capillary_pressure]
+        type = BrooksCoreyCapillaryPressure
         threshold_pressure = '${brooks_corey_threshold}'
-        power = '${capillary_pressure_power}'
+        exponent = '${capillary_pressure_power}'
         effective_saturation = 'state/Seff'
         capillary_pressure = 'state/Pc'
-        apply_log_extension = true
+        log_extension = true
+        transition_saturation = 0.1
     []
     [M6]
         type = ScalarLinearCombination

@@ -1,9 +1,9 @@
 [Models]
     ## solid mechanics ----------------------------------------------------------
     [Jacobian]
-        type = DeformationGradientJacobian
-        deformation_gradient = 'forces/F'
-        jacobian = 'state/J'
+        type = R2Determinant
+        input = 'forces/F'
+        determinant = 'state/J'
     []
     [cliquid]
         type = ScalarParameterToState
@@ -16,16 +16,16 @@
         to = 'state/phif'
     []
     [fluid_F]
-        type = PhaseChangeDeformationGradientJacobian
+        type = SwellingAndPhaseChangeDeformationJacobian
         phase_fraction = 'state/cliquid'
-        CPE = 0.0
-        CPC = '${dOmega_f}'
+        swelling_coefficient = 0.0
+        reference_volume_difference = '${dOmega_f}'
         jacobian = 'state/Jf'
         fluid_fraction = 'state/phif'
     []
     # thermal add-on ###########
     [Fthermal]
-        type = ThermalDeformationGradientJacobian
+        type = ThermalDeformationJacobian
         temperature = 'forces/T'
         reference_temperature = '${Tref}'
         CTE = 0.1
@@ -81,7 +81,7 @@
     ## additional info ----------------------------------------------------------
     [phip]
         type = ScalarParameterToState
-        from = 0.99
+        from = 1.0
         to = 'state/phip'
     []
     [rhocp_eff]

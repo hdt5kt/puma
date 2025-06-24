@@ -11,7 +11,7 @@ Y_SiC = 7.4e9  # Pa
 Y_SiC_compress = -1.1e9  # Pa
 Y_SiC_tensions = 0.14e9  # Pa
 
-postprocess_folder = "tie_constraint_with_phasechange"
+postprocess_folder = "out"
 plotfolder = "results"
 
 filename = [
@@ -99,13 +99,13 @@ for i in range(len(filename)):
         ss[i] = np.max(data["max_pk1_principal"])
     else:
         ss[i] = np.min(data["max_pk1_principal"])
-    ss[i] = data["max_pk1_principal"][-1]
+    # ss[i] = data["max_pk1_principal"][-1]
 
 ax.plot(tl[0:seperate] * 10.0, ss[0:seperate] / 1e9, "k", label="modified")
 ax.plot(tl[seperate:] * 10.0, ss[seperate:] / 1e9, "--k", label="original")
 
-# ax.axhline(y=Y_SiC_compress / 1e9, color="r", linestyle="--")
-ax.axhline(y=Y_SiC_tensions / 1e9, color="r", linestyle="--")
+ax.axhline(y=Y_SiC_compress / 1e9, color="r", linestyle="--")
+# ax.axhline(y=Y_SiC_tensions / 1e9, color="r", linestyle="--")
 
 ax.set_xlabel("tl, vertical wall thickness (mm)")
 ax.set_ylabel("max principle (GPa)")

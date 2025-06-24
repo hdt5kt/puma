@@ -1,8 +1,8 @@
 [Models]
     [Jacobian]
-        type = DeformationGradientJacobian
-        deformation_gradient = 'forces/F'
-        jacobian = 'state/J'
+        type = R2Determinant
+        input = 'forces/F'
+        determinant = 'state/J'
     []
     [Pressure]
         type = ScalarLinearCombination
@@ -11,7 +11,7 @@
         to_var = 'state/pc'
     []
     [Jtotal]
-        type = ThermalDeformationGradientJacobian
+        type = ThermalDeformationJacobian
         temperature = 'forces/T'
         reference_temperature = 300
         CTE = 1e-5

@@ -12,7 +12,7 @@ t_displace = 200
 # denisty # g cm-3
 rho_PR = 2.00 # density at liquid state
 
-brooks_corey_threshold = 1e4 #Pa
+brooks_corey_threshold = 1e-1 #Pa
 capillary_pressure_power = 3
 phi_L_residual = 0.0
 
@@ -36,7 +36,7 @@ nu = 0.3
 E_feature = '${fparse E*porosity_feature}'
 E_background = '${fparse E*porosity_background}'
 
-advs_coefficient = 10.0
+swelling_coefficient = 0.1
 
 gravity = 0 # 980.665
 
@@ -201,7 +201,8 @@ displace_value_y = -0.5
         formulation = TOTAL
         volumetric_locking_correction = true
         generate_output = "pk1_stress_xx pk1_stress_yy pk1_stress_zz 
-                            pk1_stress_xy pk1_stress_xz pk1_stress_yz vonmises_pk1_stress"
+                            pk1_stress_xy pk1_stress_xz pk1_stress_yz vonmises_pk1_stress
+                            max_principal_pk1_stress"
       []
     []
   []
@@ -212,7 +213,7 @@ displace_value_y = -0.5
   cli_args = 'kk_L=${kk_PR} permeability_power=${permeability_power} rhof_nu=${fparse rho_PR/mu_PR}
               rhof2_nu=${fparse rho_PR^2/mu_PR} phif_residual=${phi_L_residual} rho_f=${fparse rho_PR}
               brooks_corey_threshold=${brooks_corey_threshold} capillary_pressure_power=${capillary_pressure_power}
-              nu=${nu} advs_coefficient=${advs_coefficient}'
+              nu=${nu} swelling_coefficient=${swelling_coefficient}'
   [all]
     model = 'model'
     verbose = true
@@ -272,7 +273,7 @@ displace_value_y = -0.5
 [ICs]
   [phif]
     type = ConstantIC
-    value = 0.001
+    value = 0.01
     variable = phif
   []
 []

@@ -7,7 +7,7 @@
 
 [Models]
     [outer_radius]
-        type = ProductGeometry
+        type = CylindricalChannelGeometry
         solid_fraction = 'state/phi_S'
         product_fraction = 'state/phi_P'
         inner_radius = 'state/ri'
@@ -110,7 +110,7 @@
 
     # reaction rate for liquid
     [outer_radius_new]
-        type = ProductGeometry
+        type = CylindricalChannelGeometry
         solid_fraction = 'state/phi_S'
         product_fraction = 'state/phi_P'
         inner_radius = 'state/ri'
@@ -146,10 +146,9 @@
     []
     [consumption]
         type = ComposedModel
-        models = 'void outer_radius_new reaction_rate_new alpha_rate liquid_consumption_rate'
+        models = 'liquid_reactivity solid_reactivity void outer_radius_new reaction_rate_new alpha_rate liquid_consumption_rate'
         additional_outputs = 'state/ri'
     []
-
     # capillary pressure
     [phimax_L]
         type = ScalarLinearCombination
@@ -160,24 +159,19 @@
     []
     [effective_saturation]
         type = EffectiveSaturation
-        residual_volume_fraction = ${phi_L_residual}
-        flow_fraction = 'forces/phi_L'
-        max_fraction = 'state/phimax_L'
+        residual_saturation = ${phi_L_residual}
+        fluid_fraction = 'forces/phi_L'
+        max_fraction = 'phimax_L'
         effective_saturation = 'state/Seff'
     []
     [capillary_pressure]
-        # type = BrooksCoreyPressure
-        # threshold_pressure = '${brooks_corey_threshold}'
-        # power = '${capillary_pressure_power}'
-        # effective_saturation = 'state/Seff'
-        # capillary_pressure = 'state/P'
-        # apply_log_extension = true
-        type = VanGenuchtenPressure
+        type = VanGenuchtenCapillaryPressure
         effective_saturation = 'state/Seff'
-        scaling_constant = 4.5e-4
-        power = 0.5
+        a = 4.5e-4
+        m = 0.5
         capillary_pressure = 'state/P'
-        apply_log_extension = true
+        log_extension = true
+        transition_saturation = 0.1
     []
     [pore_pressure]
         type = ScalarLinearCombination
@@ -187,7 +181,7 @@
     []
     [Pc]
         type = ComposedModel
-        models = 'phimax_L effective_saturation pore_pressure capillary_pressure'
+        models = ' effective_saturation pore_pressure capillary_pressure'
         additional_outputs = 'state/phimax_L state/Seff'
     []
     [model_out]

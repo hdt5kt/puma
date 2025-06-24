@@ -58,9 +58,9 @@
     []
     ## solid mechanics ----------------------------------------------------------
     [Jacobian]
-        type = DeformationGradientJacobian
-        deformation_gradient = 'forces/F'
-        jacobian = 'state/J'
+        type = R2Determinant
+        input = 'forces/F'
+        determinant = 'state/J'
     []
     [M1]
         type = ScalarMultiplication
@@ -69,16 +69,16 @@
         to_var = 'state/M1'
     []
     [fluid_F]
-        type = PhaseChangeDeformationGradientJacobian
+        type = SwellingAndPhaseChangeDeformationJacobian
         phase_fraction = 'state/cliquid'
-        CPC = '${dOmega_f}'
-        CPE = '${swelling_coef}'
+        reference_volume_difference = '${dOmega_f}'
+        swelling_coefficient = '${swelling_coef}'
         jacobian = 'state/Jf'
         fluid_fraction = 'forces/phif'
     []
     # thermal add-on ###########
     [Fthermal]
-        type = ThermalDeformationGradientJacobian
+        type = ThermalDeformationJacobian
         temperature = 'forces/T'
         reference_temperature = ${Tref}
         CTE = ${therm_expansion}
@@ -133,12 +133,12 @@
     []
     ############################################################
     [stress_induce_pressure]
-        type = AdvectionStress
+        type = AdvectiveStress
         coefficient = '${advs_coefficient}'
-        jacobian = 'state/J'
-        deformation_gradient = 'state/Fe'
+        jacobian = 'state/Jf'
+        deformation_gradient = 'forces/F'
         pk1_stress = 'state/pk1'
-        average_advection_stress = 'state/Ps'
+        advective_stress = 'state/Ps'
     []
     [stress_scale]
         type = ScalarMultiplication
@@ -167,7 +167,7 @@
         type = PowerLawPermeability
         reference_permeability = ${kk_L}
         reference_porosity = 0.9
-        power = ${permeability_power}
+        exponent = ${permeability_power}
         porosity = 'state/phif_max'
         permeability = 'state/perm'
     []
@@ -215,19 +215,20 @@
         lower_bound = '0'
         upper_bound = '0.1'
     []
-    [capillary_pressure]
-        type = BrooksCoreyPressure
+       [capillary_pressure]
+        type = BrooksCoreyCapillaryPressure
         threshold_pressure = '${brooks_corey_threshold}'
-        power = '${capillary_pressure_power}'
+        exponent = '${capillary_pressure_power}'
         effective_saturation = 'state/Seff'
         capillary_pressure = 'state/Pc'
-        apply_log_extension = true
+        log_extension = true
+        transition_saturation = 0.1
     []
     [M5]
         type = ScalarLinearCombination
         from_var = 'state/Pc state/SPs'
         to_var = 'state/M5'
-        coefficients = '-1.0 -1.0'
+        coefficients = '-1.0 1.0'
     []
     [model_porousflow]
         type = ComposedModel

@@ -2,10 +2,10 @@
 
 # Simulation parameters
 dt = 5 #s
-total_time = 3000 #s
+total_time = 1800 #s
 
 flux_in = 0.1 # volume fraction
-flux_out = 0.1
+flux_out = 0.4
 t_ramp = 1000
 
 # Molar Mass # g mol-1
@@ -19,10 +19,10 @@ rho_SiC = 3.21
 rho_C = 2.26
 
 # material property
-D_LP = 2.65e-6 # cm2 s-1
+D_LP = 2.65e-5 # cm2 s-1
 l_c = 1.0 # cm
 
-brooks_corey_threshold = 1e5 #Pa
+brooks_corey_threshold = 1e3 #Pa
 capillary_pressure_power = 3
 phi_L_residual = 0.0
 
@@ -39,14 +39,11 @@ k_C = 1.0
 k_SiC = 1.0
 
 # macroscopic property
-D_macro = 0.001 #cm2 s-1
+D_macro = 0.0001 #cm2 s-1
 
 # initial condition
 phi0_SiC = 0.001
-phi0_C_feature = 0.5
-phi0_C_background = 0.8
-
-gravity = 0 # 980.665
+phi0_C = 0.8
 
 ## Calculations
 D_bar = '${fparse D_LP/(l_c^2)}'
@@ -60,70 +57,25 @@ oSiCm1 = '${fparse 1/omega_SiC}'
 
 chem_ratio = '${fparse k_SiC/k_C}'
 
+L = 1
+n = 100
+
 [GlobalParams]
   pressure = P
   fluid_fraction = phif
 []
 
 [Mesh]
-  [mesh0]
-    type = FileMeshGenerator
-    file = 'gold/core.msh'
-  []
+    type = GeneratedMesh
+    dim = 1
+    nx = ${n}
+    xmax = ${L}
 []
 
 [Variables]
   [P]
   []
   [phif]
-  []
-[]
-
-[Kernels]
-  [time]
-    type = PumaCoupledTimeDerivative
-    material_prop = M1
-    variable = phif
-    material_fluid_fraction_derivative = dM1dphif
-    material_pressure_derivative = dM1dP
-  []
-  [diffusion]
-    type = PumaCoupledDiffusion
-    material_prop = M2
-    variable = phif
-    material_fluid_fraction_derivative = dM2dphif
-    material_pressure_derivative = dM2dP
-  []
-  [darcy_nograv]
-    type = PumaCoupledDarcyFlow
-    coupled_variable = P
-    material_prop = M3
-    variable = phif
-    material_fluid_fraction_derivative = dM3dphif
-    material_pressure_derivative = dM3dP
-  []
-  [gravity]
-    type = CoupledAdditiveFlux
-    material_prop = M4
-    value = '0.0 ${gravity} 0.0'
-    variable = phif
-    material_fluid_fraction_derivative = dM4dphif
-    material_pressure_derivative = dM4dP
-  []
-  [L2]
-    type = CoupledL2Projection
-    material_prop = M6
-    variable = P
-    material_fluid_fraction_derivative = dM6dphif
-    material_pressure_derivative = dM6dP
-  []
-  [source]
-    type = CoupledMaterialSource
-    material_prop = M5
-    coefficient = -1
-    variable = phif
-    material_fluid_fraction_derivative = dM5dphif
-    material_pressure_derivative = dM5dP
   []
 []
 
@@ -172,6 +124,46 @@ chem_ratio = '${fparse k_SiC/k_C}'
       property = perm
       execute_on = 'INITIAL TIMESTEP_END'
     []
+  []
+[]
+
+[Kernels]
+  [time]
+    type = PumaCoupledTimeDerivative
+    material_prop = M1
+    variable = phif
+    material_fluid_fraction_derivative = dM1dphif
+    material_pressure_derivative = dM1dP
+  []
+  [diffusion]
+    type = PumaCoupledDiffusion
+    material_prop = M2
+    variable = phif
+    material_fluid_fraction_derivative = dM2dphif
+    material_pressure_derivative = dM2dP
+  []
+  [darcy_nograv]
+    type = PumaCoupledDarcyFlow
+    coupled_variable = P
+    material_prop = M3
+    variable = phif
+    material_fluid_fraction_derivative = dM3dphif
+    material_pressure_derivative = dM3dP
+  []
+  [L2]
+    type = CoupledL2Projection
+    material_prop = M6
+    variable = P
+    material_fluid_fraction_derivative = dM6dphif
+    material_pressure_derivative = dM6dP
+  []
+  [source]
+    type = CoupledMaterialSource
+    material_prop = M5
+    coefficient = -1
+    variable = phif
+    material_fluid_fraction_derivative = dM5dphif
+    material_pressure_derivative = dM5dP
   []
 []
 
@@ -230,102 +222,112 @@ chem_ratio = '${fparse k_SiC/k_C}'
     prop_names = 'phi0_SiC'
     prop_values = '${phi0_SiC}'
   []
-  [phi0_C_feature]
+  [phi0_C]
     type = GenericConstantMaterial
     prop_names = phi0_C
-    prop_values = ${phi0_C_feature}
-    block = circle
-  []
-  [phi0_C_background]
-    type = GenericConstantMaterial
-    prop_names = phi0_C
-    prop_values = ${phi0_C_background}
-    block = non_circle
-  []
-[]
-
-[Functions]
-  [flux_in]
-    type = PiecewiseLinear
-    x = '0 ${t_ramp}'
-    y = '0 ${flux_in}'
-  []
-  [flux_out]
-    type = PiecewiseLinear
-    x = '0 ${t_ramp}'
-    y = '0 ${flux_out}'
-  []
-  [dirichlet_in]
-    type = PiecewiseLinear
-    x = '0 ${t_ramp}'
-    y = '0 ${fparse 1-phi0_C_background}'
+    prop_values = ${phi0_C}
   []
 []
 
 [Postprocessors]
-  [time]
-    type = TimePostprocessor
-    execute_on = 'INITIAL TIMESTEP_BEGIN'
-  []
+    [time]
+        type = TimePostprocessor
+        execute_on = 'INITIAL TIMESTEP_BEGIN'
+    []
+[]
+
+[Functions]
+    [flux_in]
+        type = PiecewiseLinear
+        x = '0 ${t_ramp}'
+        y = '0 ${flux_in}'
+    []
+    [flux_out]
+        type = PiecewiseLinear
+        x = '0 ${t_ramp}'
+        y = '0 ${flux_out}'
+    []
 []
 
 [BCs]
-  [bottom_inlet]
-    type = InfiltrationWake
-    boundary = core_bottom
-    inlet_flux = flux_in
-    outlet_flux = flux_out
-    product_fraction = phip
-    product_fraction_derivative = dphipdphif
-    solid_fraction = phis
-    solid_fraction_derivative = dphisdphif
-    variable = phif
-  []
+    [left]
+        type = InfiltrationWake
+        boundary = left
+        inlet_flux = flux_in
+        outlet_flux = flux_out
+        product_fraction = phip
+        product_fraction_derivative = dphipdphif
+        solid_fraction = phis
+        solid_fraction_derivative = dphisdphif
+        variable = phif
+    []
+    [right]
+        type = InfiltrationWake
+        boundary = right
+        inlet_flux = flux_in
+        outlet_flux = flux_out
+        product_fraction = phip
+        product_fraction_derivative = dphipdphif
+        solid_fraction = phis
+        solid_fraction_derivative = dphisdphif
+        variable = phif
+    []
+[]
+
+[VectorPostprocessors]
+    [value]
+        type = LineValueSampler
+        start_point = '0 0 0'
+        end_point = '${L} 0 0'
+        num_points = ${n}
+        variable = 'phif phi_SiC phi_C phi_nonliquid porosity permeability'
+        sort_by = 'x'
+        execute_on = 'INITIAL TIMESTEP_END'
+    []
 []
 
 [Executioner]
-  type = Transient
-  solve_type = 'newton'
-  petsc_options_iname = '-pc_type' #-snes_type'
-  petsc_options_value = 'lu' # vinewtonrsls'
-  automatic_scaling = true
+    type = Transient
+    solve_type = 'newton'
+    petsc_options_iname = '-pc_type' #-snes_type'
+    petsc_options_value = 'lu' # vinewtonrsls'
+    automatic_scaling = true
 
-  line_search = none
+    line_search = none
 
-  nl_abs_tol = 1e-06
-  nl_rel_tol = 1e-08
-  nl_max_its = 12
+    nl_abs_tol = 1e-6
+    nl_rel_tol = 1e-8
+    nl_max_its = 12
 
-  end_time = ${total_time}
-  dtmax = '${fparse 200*dt}'
+    end_time = ${total_time}
+    dtmax = '${fparse 10*dt}'
 
-  [TimeStepper]
-    type = IterationAdaptiveDT
-    dt = ${dt} #s
-    optimal_iterations = 6
-    iteration_window = 2
-    cutback_factor = 0.5
-    cutback_factor_at_failure = 0.1
-    growth_factor = 1.2
-    linear_iteration_ratio = 10000
-  []
+    [TimeStepper]
+        type = IterationAdaptiveDT
+        dt = ${dt} #s
+        optimal_iterations = 6
+        iteration_window = 2
+        cutback_factor = 0.5
+        cutback_factor_at_failure = 0.1
+        growth_factor = 1.2
+        linear_iteration_ratio = 10000
+    []
 
-  #fixed_point_max_its = 10
-  #fixed_point_algorithm = picard
-  #fixed_point_abs_tol = 1e-06
-  #fixed_point_rel_tol = 1e-08
+    #fixed_point_max_its = 10
+    #fixed_point_algorithm = picard
+    #fixed_point_abs_tol = 1e-06
+    #fixed_point_rel_tol = 1e-08
 []
 
 [Outputs]
-  exodus = true
-  # file_base = '${base_folder}/core'
-  [console]
-    type = Console
-    execute_postprocessors_on = 'NONE'
-  []
-  [csv]
-    type = CSV
-    # file_base = '${base_folder}/out'
-  []
-  print_linear_residuals = false
+    exodus = true
+    [console]
+        type = Console
+        execute_postprocessors_on = NONE
+    []
+    [csv]
+        type = CSV
+        file_base = 'output/out'
+    []
+    print_linear_residuals = false
 []

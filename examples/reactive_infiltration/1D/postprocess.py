@@ -29,13 +29,12 @@ norm = colors.Normalize(vmin=times.iloc[0], vmax=times.iloc[-1])
 sm = cm.ScalarMappable(norm=norm, cmap="rainbow")
 
 qois = [
-    "phi_Si",
+    "phif",
     "phi_C",
     "phi_SiC",
-    "void_fraction",
-    "dPcdphiSi",
+    "porosity",
     "permeability",
-    "Dtotal",
+    "phi_nonliquid",
 ]
 
 for qoi in qois:

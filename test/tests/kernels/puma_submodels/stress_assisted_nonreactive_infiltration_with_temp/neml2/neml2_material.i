@@ -1,9 +1,9 @@
 [Models]
     ## solid mechanics ----------------------------------------------------------
     [Jacobian]
-        type = DeformationGradientJacobian
-        deformation_gradient = 'forces/F'
-        jacobian = 'state/J'
+        type = R2Determinant
+        input = 'forces/F'
+        determinant = 'state/J'
     []
     [M1]
         type = ScalarLinearCombination
@@ -11,21 +11,17 @@
         from_var = 'state/J'
         to_var = 'state/M1'
     []
-    [no_phase_change]
-        type = ScalarParameterToState
-        from = 1.0
-        to = 'state/c'
-    []
     [fluid_JF]
-        type = PhaseChangeDeformationGradientJacobian
-        phase_fraction = 'state/c'
-        CPE = 1e-2
+        type = SwellingAndPhaseChangeDeformationJacobian
+        phase_fraction = 1.0
+        swelling_coefficient = 0.01 # '${swelling_coefficient}'
+        reference_volume_difference = 0.0
         jacobian = 'state/Jf'
         fluid_fraction = 'forces/phif'
     []
     # thermal add-on ###########
     [Fthermal]
-        type = ThermalDeformationGradientJacobian
+        type = ThermalDeformationJacobian
         temperature = 'forces/T'
         reference_temperature = ${Tref}
         CTE = ${therm_expansion}
@@ -70,9 +66,9 @@
     []
     [model_pk1]
         type = ComposedModel
-        models = 'no_phase_change fluid_JF Jtotal
+        models = 'fluid_JF Jtotal
                   Fthermal totalF green_strain S_pk2 S_pk2_R2 S_pk1'
-        additional_outputs = 'state/Fe'
+        additional_outputs = 'state/Jf state/Jt'
     []
     [model_sm]
         type = ComposedModel
@@ -80,12 +76,13 @@
     []
     ############################################################
     [stress_induce_pressure]
-        type = AdvectionStress
-        coefficient = '${advs_coefficient}'
-        jacobian = 'state/J'
-        deformation_gradient = 'state/Fe'
+        type = AdvectiveStress
+        coefficient = 1.0 #'${swelling_coefficient}'
+        js = 'state/Jf'
+        jt = 'state/Jt'
+        deformation_gradient = 'forces/F'
         pk1_stress = 'state/pk1'
-        average_advection_stress = 'state/Ps'
+        advective_stress = 'state/Ps'
     []
     [stress_scale]
         type = ScalarMultiplication
@@ -94,7 +91,7 @@
     []
     [advective_stress]
         type = ComposedModel
-        models = 'model_pk1 stress_scale Jacobian stress_induce_pressure'
+        models = 'model_pk1 stress_scale stress_induce_pressure'
     []
     #################################################################
     ## porous flow -----------------------------------------------------------------
@@ -107,7 +104,7 @@
         type = PowerLawPermeability
         reference_permeability = ${kk_L}
         reference_porosity = 0.9
-        power = ${permeability_power}
+        exponent = ${permeability_power}
         porosity = 'state/phif_max'
         permeability = 'state/perm'
     []
@@ -137,8 +134,8 @@
     []
     [effective_saturation]
         type = EffectiveSaturation
-        residual_volume_fraction = 0.0
-        flow_fraction = 'forces/phif'
+        residual_saturation = 0.0
+        fluid_fraction = 'forces/phif'
         max_fraction = 'state/phif_max'
         effective_saturation = 'state/Seff'
     []
@@ -149,19 +146,20 @@
         lower_bound = '0'
         upper_bound = '0.1'
     []
-    [capillary_pressure]
-        type = BrooksCoreyPressure
+       [capillary_pressure]
+        type = BrooksCoreyCapillaryPressure
         threshold_pressure = '${brooks_corey_threshold}'
-        power = '${capillary_pressure_power}'
+        exponent = '${capillary_pressure_power}'
         effective_saturation = 'state/Seff'
         capillary_pressure = 'state/Pc'
-        apply_log_extension = true
+        log_extension = true
+        transition_saturation = 0.1
     []
     [M5]
         type = ScalarLinearCombination
         from_var = 'state/Pc state/SPs'
         to_var = 'state/M5'
-        coefficients = '-1.0 -1.0'
+        coefficients = '-1.0 1.0'
     []
     [empty_porosity]
         type = ScalarLinearCombination

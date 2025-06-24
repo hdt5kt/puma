@@ -107,7 +107,7 @@
     []
     ################ residual term associated with vfop
     [V_RVE]
-        type = PyrolysisVolume
+        type = EffectiveVolume
         density_binder = '${rho_b}'
         density_solid = '${rho_s}'
         density_particle = '${rho_p}'
@@ -214,7 +214,7 @@
     #########
     ############### volume fraction ######
     [V_RVE_post]
-        type = PyrolysisVolume
+        type = EffectiveVolume
         density_binder = '${rho_b}'
         density_solid = '${rho_s}'
         density_particle = '${rho_p}'
