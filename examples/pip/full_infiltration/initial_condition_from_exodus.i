@@ -2,25 +2,9 @@
     [reader_object2]
         type = SolutionUserObject
         mesh = '${save_folder}/out_cycle${fparse cycle-1}.e'
-        system_variables = 'T disp_x disp_y wb ws wp wgcp Vol phiop phis'
+        system_variables = 'T disp_x disp_y ws wp wgcp o_Vref phiop V'
         execute_on = 'INITIAL'
         timestep = 'LATEST'
-    []
-    [reader_object1]
-        type = PropertyReadFile
-        prop_file_name = 'initial_condition.csv'
-        read_type = 'voronoi'
-        nprop = 6 # number of columns in CSV
-        nvoronoi = '${num_file_data}' # number of rows that are considered
-    []
-[]
-
-[Functions]
-    [Vref0]
-        type = PiecewiseConstantFromCSV
-        read_prop_user_object = reader_object1
-        read_type = 'voronoi'
-        column_number = 5
     []
 []
 
@@ -45,7 +29,11 @@
         order = CONSTANT
         family = MONOMIAL
     []
-    [Vol0]
+    [o_Vref0]
+        order = CONSTANT
+        family = MONOMIAL
+    []
+    [V0]
         order = CONSTANT
         family = MONOMIAL
     []
@@ -64,12 +52,6 @@
         solution_uo = reader_object2
         variable = phiop0
     []
-    [phis0]
-        type = SolutionIC
-        from_variable = phis
-        solution_uo = reader_object2
-        variable = phis0
-    []
     [ws]
         type = SolutionIC
         from_variable = ws
@@ -82,11 +64,17 @@
         solution_uo = reader_object2
         variable = wgcp0
     []
-    [V_RVE]
+    [o_Vref]
         type = SolutionIC
-        from_variable = Vol
+        from_variable = o_Vref
         solution_uo = reader_object2
-        variable = Vol0
+        variable = o_Vref0
+    []
+    [V]
+        type = SolutionIC
+        from_variable = V
+        solution_uo = reader_object2
+        variable = V0
     []
 []
 
@@ -94,12 +82,18 @@
     [init_wb]
         type = ParsedMaterial
         property_name = wb0
-        coupled_variables = 'phiop0 Vol0'
-        expression = 'phiop0*${rho_b}*Vol0/${Mref}'
+        coupled_variables = 'phiop0 V0'
+        expression = 'phiop0*${rho_b}*V0/${Mref}'
+    []
+    [init_mwb0]
+        type = ParsedMaterial
+        property_name = mwb0
+        coupled_variables = 'phiop0 V0'
+        expression = '-phiop0*${rho_b}*V0/${Mref}'
     []
     [init_wp]
         type = ParsedMaterial
-        property_name = wp0
+        property_name = wp
         coupled_variables = 'wp0'
         expression = 'wp0/1.0'
     []
@@ -109,12 +103,6 @@
         coupled_variables = 'ws0'
         expression = 'ws0/1.0'
     []
-    [init_phis]
-        type = ParsedMaterial
-        property_name = phis0
-        coupled_variables = 'phis0'
-        expression = 'phis0/1.0'
-    []
     [init_wgcp]
         type = ParsedMaterial
         property_name = wgcp0
@@ -123,14 +111,9 @@
     []
     [init_Vref]
         type = ParsedMaterial
-        property_name = Vol0
-        coupled_variables = 'Vol0'
-        expression = 'Vol0/1.0'
-    []
-    [init_V0]
-        type = GenericFunctionMaterial
-        prop_names = 'Vref0'
-        prop_values = Vref0
+        property_name = o_Vref
+        coupled_variables = 'o_Vref0'
+        expression = 'o_Vref0/1.0'
     []
 []
 

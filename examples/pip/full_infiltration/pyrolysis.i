@@ -2,9 +2,6 @@
 # Simulation parameters
 dt = 5
 
-alpha0 = '${fparse 1/(1-Y)}' # 1/(1-Y)
-invYm1 = '${fparse 1-1/Y}' # 1-1/Y
-
 t_ramp = '${fparse (Tmax-T0)/dTdt*60}' #s
 theat = '${fparse t_ramp+t_hold*3600}'
 dTdtcool = '${fparse (Tmax-T0)/(tcool*3600)}' #Ks-1
@@ -12,6 +9,7 @@ total_time = '${fparse theat + tcool*3600}'
 
 [GlobalParams]
     displacements = 'disp_x disp_y'
+    temperature = 'T'
 []
 
 [Mesh]
@@ -41,24 +39,40 @@ total_time = '${fparse theat + tcool*3600}'
 []
 
 [Kernels]
-    [heat_eq]
-        type = PumaDiffusion
-        diffusivity = K
-        diffusivity_derivative = neml2_dKdT
+    ## Temperature flow ---------------------------------------------------------
+    [temp_time]
+        type = PumaCoupledTimeDerivative
+        material_prop = M1
         variable = T
+        material_temperature_derivative = dM1dT
+        material_deformation_gradient_derivative = zeroR2
     []
-    [time_dot]
-        type = PumaTimeDerivative
+    [temp_diffusion]
+        type = PumaCoupledDiffusion
+        material_prop = M2
         variable = T
-        material_prop = rhocp
-        material_prop_derivative = neml2_drhocpdT
+        material_temperature_derivative = dM2dT
+        material_deformation_gradient_derivative = zeroR2
     []
     [reaction_heat]
-        type = MaterialSource
-        prop = alphadot
-        prop_derivative = neml2_dalphadotdT
-        coefficient = '${fparse -factor*rho_s*hrp}'
+        type = CoupledMaterialSource
+        material_prop = M3
         variable = T
+        material_temperature_derivative = dM3dT
+        material_deformation_gradient_derivative = zeroR2
+    []
+    ## solid mechanics ---------------------------------------------------------
+    [offDiagStressDiv_x]
+        type = MomentumBalanceCoupledJacobian
+        component = 0
+        variable = disp_x
+        material_temperature_derivative = dpk1dT
+    []
+    [offDiagStressDiv_y]
+        type = MomentumBalanceCoupledJacobian
+        component = 1
+        variable = disp_y
+        material_temperature_derivative = dpk1dT
     []
 []
 
@@ -68,74 +82,66 @@ total_time = '${fparse theat + tcool*3600}'
             [sample]
                 new_system = true
                 add_variables = true
-                strain = SMALL
+                strain = FINITE
                 formulation = TOTAL
                 volumetric_locking_correction = true
-                generate_output = "cauchy_stress_xx cauchy_stress_yy cauchy_stress_zz
-                                cauchy_stress_xy cauchy_stress_xz cauchy_stress_yz
-                                mechanical_strain_xx mechanical_strain_yy mechanical_strain_zz
-                                mechanical_strain_xy mechanical_strain_xz mechanical_strain_yz"
-                additional_generate_output = 'vonmises_cauchy_stress'
+                generate_output = "pk1_stress_xx pk1_stress_yy pk1_stress_zz 
+                                    pk1_stress_xy pk1_stress_xz pk1_stress_yz vonmises_pk1_stress
+                                    max_principal_pk1_stress"
             []
         []
     []
 []
 
 [NEML2]
-    input = 'neml2/PR_pyrolysis.i'
+    input = 'neml2/neml2_material.i'
     cli_args = 'rho_s=${rho_s} rho_b=${rho_b} rho_g=${rho_g} rho_p=${rho_p} Mref=${Mref}
                 rho_sm1M=${fparse Mref/rho_s} rho_bm1M=${fparse Mref/rho_b}
                 rho_gm1M=${fparse Mref/rho_g} rho_pm1M=${fparse Mref/rho_p}
-                cp_s=${cp_s} cp_b=${cp_b} cp_p=${cp_p}
-                k_s=${k_s} k_b=${k_b} k_p=${k_p}
-                Ea=${Ea} A=${A} R=${R} Y=${Y} invYm1=${invYm1}
-                order=${order} order_k=${order_k} hrp=${hrp}
-                cp_to_wg_relation=${cp_to_wg_relation} op_to_solid_relation=${op_to_solid_relation}
-                alpha0=${alpha0} Tref=${Tref} E=${E} g=${g} mu=${mu}'
+                cp_s=${cp_s} cp_b=${cp_b} cp_g=${cp_g} cp_p=${cp_p}
+                k_s=${k_s} k_b=${k_b} k_g=${k_g} k_p=${k_p}
+                Ea=${Ea} A=${A} R=${R} mY=${fparse -Y}
+                order=${order} source_coeff=${fparse -rho_s*hrp}
+                mu=${pyro_mu} mzeta=${fparse -zeta}
+                E=${E} g=${g} E=${E} Tref=${Tref}'
     [all]
         model = 'model'
         verbose = true
         device = 'cpu'
 
-        moose_input_types = 'VARIABLE     POSTPROCESSOR POSTPROCESSOR MATERIAL        MATERIAL
-                             MATERIAL     MATERIAL      MATERIAL      MATERIAL        MATERIAL
-                             MATERIAL     MATERIAL      MATERIAL      MATERIAL        MATERIAL
-                             MATERIAL' #     MATERIAL      MATERIAL      MATERIAL'
-        moose_inputs = '     T            time          time          alpha           phis
-                             wb           wp            ws            wgcp            phiop
-                             wb           wp            ws            wgcp            phiop
-                             neml2_strain' # eps_Ev        eps_Ev        Vol'
-        neml2_inputs = '     forces/T     forces/tt     old_forces/tt old_state/alpha old_state/phis
-                             state/wb     state/wp      state/ws      state/wgcp      state/phiop
-                             old_state/wb old_state/wp  old_state/ws  old_state/wgcp  old_state/phiop
-                             forces/eps' #   state/Ev      old_state/Ev    old_state/V'
+        moose_input_types = 'VARIABLE     POSTPROCESSOR POSTPROCESSOR   MATERIAL        MATERIAL
+                             MATERIAL     MATERIAL      MATERIAL        MATERIAL        MATERIAL'
+        moose_inputs = '     T            time          time            alpha           alpha
+                             wb           ws            wgcp            phiop           deformation_gradient'
+        neml2_inputs = '     forces/T     forces/t      old_forces/t    old_state/alpha state/alpha
+                             old_state/wb old_state/ws  old_state/wgcp  old_state/phiop forces/F'
 
-        moose_parameter_types = 'MATERIAL    MATERIAL    MATERIAL       MATERIAL       MATERIAL'
-        moose_parameters = '     wb0         ws0         wb0            ws0            Vref0'
-        neml2_parameters = '     amount_wb0  amount_ws0  amount_new_wb0 amount_new_ws0 volume_strain_V0'
+        moose_parameter_types = 'MATERIAL        MATERIAL        MATERIAL'
+        moose_parameters = '     wp              mwb0            o_Vref'
+        neml2_parameters = '     wp_state_param  binder_rate_c_0 Jvolume_c_0'
 
         moose_output_types = 'MATERIAL        MATERIAL   MATERIAL   MATERIAL     MATERIAL
                               MATERIAL        MATERIAL   MATERIAL   MATERIAL     MATERIAL
-                              MATERIAL        MATERIAL   MATERIAL   MATERIAL
-                              MATERIAL  ' #     MATERIAL'
-        moose_outputs = '     wb              wp         ws         wgcp         phiop
+                              MATERIAL        MATERIAL   MATERIAL   MATERIAL     MATERIAL
+                              MATERIAL'
+        moose_outputs = '     phiop           wb         ws         wgcp         pk1_stress
                               phib            phip       phis       phigcp       alpha
-                              alphadot        K          Vol          rhocp
-                              neml2_stress ' #   eps_Ev'
-        neml2_outputs = '     state/wb        state/wp   state/ws   state/wgcp   state/phiop
+                              M3              M2         M1         Jt           Jv
+                              V'
+        neml2_outputs = '     state/phiop     state/wb   state/ws   state/wgcp   state/pk1
                               state/phib      state/phip state/phis state/phigcp state/alpha
-                              state/alpha_dot state/K    state/V    state/rhocp
-                              state/sigma' #    state/Ev'
+                              state/M3        state/M2   state/M1   state/Jt     state/Jv
+                              state/V'
 
-        moose_derivative_types = 'MATERIAL                  MATERIAL              MATERIAL
-                                  MATERIAL'
-        moose_derivatives = '     neml2_dalphadotdT         neml2_drhocpdT        neml2_dKdT
-                                  neml2_dsigdeps'
-        neml2_derivatives = '     state/alpha_dot forces/T; state/rhocp forces/T; state/K forces/T;
-                                  state/sigma forces/eps'
+        moose_derivative_types = 'MATERIAL            MATERIAL              MATERIAL
+                                  MATERIAL            MATERIAL'
+        moose_derivatives = '     dM3dT               dM1dT                 dM2dT
+                                  dpk1dT              pk1_jacobian'
+        neml2_derivatives = '     state/M3 forces/T;  state/M1 forces/T;    state/M2 forces/T;
+                                  state/pk1 forces/T; state/pk1 forces/F'
 
-        initialize_outputs = '      wb  wp  ws  wgcp  phis  alpha  phiop ' # Vol     eps_Ev'
-        initialize_output_values = 'wb0 wp0 ws0 wgcp0 phis0 alpha0 phiop0 ' # Vref0  eps_Ev0'
+        initialize_outputs = '      wb  wgcp  ws  alpha  phiop'
+        initialize_output_values = 'wb0 wgcp0 ws0 alpha0 phiop0'
     []
 []
 
@@ -143,17 +149,12 @@ total_time = '${fparse theat + tcool*3600}'
     [init_alpha]
         type = GenericConstantMaterial
         prop_names = 'alpha0 phiop0'
-        prop_values = '${alpha0} 0.0'
+        prop_values = '0.0 0.0'
     []
-    [convert_strain]
-        type = RankTwoTensorToSymmetricRankTwoTensor
-        from = 'total_strain'
-        to = 'neml2_strain'
-    []
-    [stress]
-        type = ComputeLagrangianObjectiveCustomSymmetricStress
-        custom_small_stress = 'neml2_stress'
-        custom_small_jacobian = 'neml2_dsigdeps'
+    [zeroR2]
+        type = GenericConstantRankTwoTensor
+        tensor_name = 'zeroR2'
+        tensor_values = '0 0 0 0 0 0 0 0 0'
     []
     [convection]
         type = ADParsedMaterial
@@ -177,48 +178,12 @@ total_time = '${fparse theat + tcool*3600}'
 [VectorPostprocessors]
     [composition_info]
         type = ElementMaterialSampler
-        property = 'phiop phigcp phis phip phib ws wp wb wgcp vonmises_cauchy_stress'
+        property = 'phiop phigcp phis phip phib ws wp wb wgcp max_principal_pk1_stress'
         execute_on = 'FINAL'
     []
 []
 
 [AuxVariables]
-    [wb]
-        order = CONSTANT
-        family = MONOMIAL
-        [AuxKernel]
-            type = MaterialRealAux
-            property = wb
-            execute_on = 'INITIAL TIMESTEP_END'
-        []
-    []
-    [wp]
-        order = CONSTANT
-        family = MONOMIAL
-        [AuxKernel]
-            type = MaterialRealAux
-            property = wp
-            execute_on = 'INITIAL TIMESTEP_END'
-        []
-    []
-    [ws]
-        order = CONSTANT
-        family = MONOMIAL
-        [AuxKernel]
-            type = MaterialRealAux
-            property = ws
-            execute_on = 'INITIAL TIMESTEP_END'
-        []
-    []
-    [wgcp]
-        order = CONSTANT
-        family = MONOMIAL
-        [AuxKernel]
-            type = MaterialRealAux
-            property = wgcp
-            execute_on = 'INITIAL TIMESTEP_END'
-        []
-    []
     [phib]
         order = CONSTANT
         family = MONOMIAL
@@ -264,12 +229,93 @@ total_time = '${fparse theat + tcool*3600}'
             execute_on = 'INITIAL TIMESTEP_END'
         []
     []
-    [Vol]
+    [wb]
         order = CONSTANT
         family = MONOMIAL
         [AuxKernel]
             type = MaterialRealAux
-            property = Vol
+            property = wb
+            execute_on = 'INITIAL TIMESTEP_END'
+        []
+    []
+    [ws]
+        order = CONSTANT
+        family = MONOMIAL
+        [AuxKernel]
+            type = MaterialRealAux
+            property = ws
+            execute_on = 'INITIAL TIMESTEP_END'
+        []
+    []
+    [wp]
+        order = CONSTANT
+        family = MONOMIAL
+        [AuxKernel]
+            type = MaterialRealAux
+            property = wp
+            execute_on = 'INITIAL TIMESTEP_END'
+        []
+    []
+    [wgcp]
+        order = CONSTANT
+        family = MONOMIAL
+        [AuxKernel]
+            type = MaterialRealAux
+            property = wgcp
+            execute_on = 'INITIAL TIMESTEP_END'
+        []
+    []
+    [o_Vref]
+        order = CONSTANT
+        family = MONOMIAL
+        [AuxKernel]
+            type = MaterialRealAux
+            property = o_Vref
+            execute_on = 'INITIAL TIMESTEP_END'
+        []
+    []
+    [V]
+        order = CONSTANT
+        family = MONOMIAL
+        [AuxKernel]
+            type = MaterialRealAux
+            property = V
+            execute_on = 'INITIAL TIMESTEP_END'
+        []
+    []
+    [heatsource]
+        order = CONSTANT
+        family = MONOMIAL
+        [AuxKernel]
+            type = MaterialRealAux
+            property = M3
+            execute_on = 'INITIAL TIMESTEP_END'
+        []
+    []
+    [alpha]
+        order = CONSTANT
+        family = MONOMIAL
+        [AuxKernel]
+            type = MaterialRealAux
+            property = alpha
+            execute_on = 'INITIAL TIMESTEP_END'
+        []
+    []
+    [Jt]
+        order = CONSTANT
+        family = MONOMIAL
+        [AuxKernel]
+            type = MaterialRealAux
+            property = Jt
+            execute_on = 'INITIAL TIMESTEP_END'
+        []
+    []
+    [Jv]
+        order = CONSTANT
+        family = MONOMIAL
+        [AuxKernel]
+            type = MaterialRealAux
+            property = Jv
             execute_on = 'INITIAL TIMESTEP_END'
         []
     []
@@ -322,7 +368,7 @@ total_time = '${fparse theat + tcool*3600}'
     nl_abs_tol = 1e-8
 
     end_time = ${total_time}
-    dtmax = '${fparse 20*dt}'
+    dtmax = '${fparse 100*dt}'
 
     [TimeStepper]
         type = IterationAdaptiveDT

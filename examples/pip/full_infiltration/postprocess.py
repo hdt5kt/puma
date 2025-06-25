@@ -116,7 +116,7 @@ for i in range(100000):
     phiop[i, :] = get_statistic(postdata, "phiop")
     phigcp[i, :] = get_statistic(postdata, "phigcp")
 
-    vonmises[i, :] = get_statistic(postdata, "vonmises_cauchy_stress")
+    vonmises[i, :] = get_statistic(postdata, "max_principal_pk1_stress")
 
 # mass
 wb = trim_and_plot(ax[0], wb, i, col="k", mk="x")
@@ -124,7 +124,7 @@ wp = trim_and_plot(ax[0], wp, i, col="b", mk="d")
 ws = trim_and_plot(ax[0], ws, i, col="r", mk="o")
 ax[0].set_ylabel("weight fraction")
 ax[0].set_xlabel("PIP cycles #")
-ax[0].set_xlim((0, i + 1))
+ax[0].set_xlim((1, i + 1))
 
 # volume fraction
 phip = phip[:i, :]
@@ -142,13 +142,13 @@ ax[1].stackplot(
 )
 ax[1].set_ylabel("average volume fraction")
 ax[1].set_xlabel("PIP cycles #")
-ax[1].set_xlim((0, i + 1))
+ax[1].set_xlim((1, i + 1))
 
 # stress
 vonmises = trim_and_plot(ax[2], vonmises / E, i, col="k", mk="x", maxmin=True)
 ax[2].set_ylabel("von_mises_stress/E")
 ax[2].set_xlabel("PIP cycles #")
-ax[2].set_xlim((0, i + 1))
+ax[2].set_xlim((1, i + 1))
 
 fig.tight_layout()
 

@@ -12,18 +12,18 @@ from generate_random_field import generate_initial_conditions
 
 pip_cycle_n = 10  # number of pip cycles
 save_folder = "main"
-corenum = 12  # number of cores used for simulation
-puma_run_file = "./../../puma-opt"
+corenum = 8  # number of cores used for simulation
+puma_run_file = "./../../../puma-opt"
 
 
-# rate of close pore relative to volume of produced solid
+# rate of close pore relative to volume of produced gas
 def cp_to_wg_relation(volume_binder):
-    return 0.002
+    return 0.001
 
 
-# portion of open pores as a function of solid produced
-def op_to_solid_relation(v_nonreactants):
-    return 1.5
+# portion of open pores as a function of binder consumed
+def op_to_binder_relation(v_nonreactants):
+    return 0.8
 
 
 # gas density as a function of temperature and pressure
@@ -45,8 +45,8 @@ zfix = 0.0
 
 # initial conditions, assumed a binary system (binder and particle) at the begining
 mode = "mass_fraction"
-min_binder = 0.655
-max_binder = 0.66
+min_binder = 0.5
+max_binder = 0.7
 lc = 5.0
 
 ############################# material and reaction properties ################################
@@ -61,33 +61,32 @@ rho_p = 3210
 cp_s = 1592
 cp_b = 1200
 cp_p = 750
+cp_g = 1e-4
 
 # thermal conductivity W/m-1K-1
-k_s = 1.5
-k_b = 0.279
+k_s = 150
+k_b = 279
 k_p = 380  # 120 and 490
+k_g = 1e-4
 
 # reaction type
-Ea = 41220  # J mol-1
-A = 1.24e4  # s-1
+Ea = 21191.61425  # J mol-1
+A = 0.0421047  # s-1
 R = 8.31446261815324  # JK-1mol-1
-hrp = 1.58e6  # e6 J kg-1
-factor = 1
-Y = 0.56  # char yield [.]
+hrp = 1.58e5  # e6 J kg-1
+Y = 0.575  # char yield [.]
 
 order = 1.0
-order_k = 1.0
 
 #### stress-strain ####
 E = 400e9
-mu = 0.3
 
 # thermal expansion coefficients (degree-1)
 Tref = 300  # K
-g = 4e-6
+g = 0.0  # 4e-6
 
 # convection coefficients - Wm-2K
-htc = 25
+htc = 200
 
 # heating profiles for pyrolysis
 T0 = 300  # K - starting and cooling temperatures
@@ -147,19 +146,18 @@ subprocess.run(
         "cp_s={:.9f}".format(cp_s),
         "cp_b={:.9f}".format(cp_b),
         "cp_p={:.9f}".format(cp_p),
+        "cp_g={:.9f}".format(cp_p),
         "k_s={:.9f}".format(k_s),
         "k_b={:.9f}".format(k_b),
         "k_p={:.9f}".format(k_p),
+        "k_g={:.9f}".format(k_p),
         "Ea={:.9f}".format(Ea),
         "A={:.9f}".format(A),
         "R={:.9f}".format(R),
         "hrp={:.9f}".format(hrp),
-        "factor={:.9f}".format(factor),
         "Y={:.9f}".format(Y),
         "order={:.9f}".format(order),
-        "order_k={:.9f}".format(order_k),
         "E={:.9f}".format(E),
-        "mu={:.9f}".format(mu),
         "g={:.9f}".format(g),
         "Tref={:.9f}".format(Tref),
         "htc={:.9f}".format(htc),
@@ -169,8 +167,8 @@ subprocess.run(
         "tcool={:.9f}".format(tcool),
         "T0={:.9f}".format(T0),
         "dTdt={:.9f}".format(dTdt),
-        "cp_to_wg_relation={:.9f}".format(cp_to_wg_relation(1)),
-        "op_to_solid_relation={:.9f}".format(op_to_solid_relation(1)),
+        "pyro_mu={:.9f}".format(cp_to_wg_relation(1)),
+        "zeta={:.9f}".format(op_to_binder_relation(1)),
         "meshfile={}".format(mesh_file),
         "xroll={:.9f}".format(xroll),
         "yroll={:.9f}".format(yroll),
@@ -208,19 +206,18 @@ for i in range(pip_cycle_n - 1):
             "cp_s={:.9f}".format(cp_s),
             "cp_b={:.9f}".format(cp_b),
             "cp_p={:.9f}".format(cp_p),
+            "cp_g={:.9f}".format(cp_p),
             "k_s={:.9f}".format(k_s),
             "k_b={:.9f}".format(k_b),
             "k_p={:.9f}".format(k_p),
+            "k_g={:.9f}".format(k_p),
             "Ea={:.9f}".format(Ea),
             "A={:.9f}".format(A),
             "R={:.9f}".format(R),
             "hrp={:.9f}".format(hrp),
-            "factor={:.9f}".format(factor),
             "Y={:.9f}".format(Y),
             "order={:.9f}".format(order),
-            "order_k={:.9f}".format(order_k),
             "E={:.9f}".format(E),
-            "mu={:.9f}".format(mu),
             "g={:.9f}".format(g),
             "Tref={:.9f}".format(Tref),
             "htc={:.9f}".format(htc),
@@ -230,8 +227,8 @@ for i in range(pip_cycle_n - 1):
             "tcool={:.9f}".format(tcool),
             "T0={:.9f}".format(T0),
             "dTdt={:.9f}".format(dTdt),
-            "cp_to_wg_relation={:.9f}".format(cp_to_wg_relation(1)),
-            "op_to_solid_relation={:.9f}".format(op_to_solid_relation(1)),
+            "pyro_mu={:.9f}".format(cp_to_wg_relation(1)),
+            "zeta={:.9f}".format(op_to_binder_relation(1)),
             "meshfile={}".format(mesh_file),
             "xroll={:.9f}".format(xroll),
             "yroll={:.9f}".format(yroll),
@@ -239,7 +236,6 @@ for i in range(pip_cycle_n - 1):
             "xfix={:.9f}".format(xfix),
             "yfix={:.9f}".format(yfix),
             "zfix={:.9f}".format(zfix),
-            "num_file_data={}".format(num_file_data),
             "Mref={:.9f}".format(reference_mass),
             "save_folder={}".format(save_folder),
             "cycle={}".format(str(i + 2)),

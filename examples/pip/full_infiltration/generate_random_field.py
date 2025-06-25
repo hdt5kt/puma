@@ -86,9 +86,10 @@ def generate_initial_conditions(
             "y": Y,
             "z": Z,
             "binder": data_binder,
-            "particle": data_particle - 1e-7,
-            "reference_volume": data_Vref,
-            "solid": 1e-7 * np.ones_like(data_binder),
+            "particle": data_particle,
+            "reference_volume": 1 / data_Vref,
+            "solid": np.zeros_like(data_binder),
+            "mwbo_for_gas_model": -data_binder,
         }
     )
 

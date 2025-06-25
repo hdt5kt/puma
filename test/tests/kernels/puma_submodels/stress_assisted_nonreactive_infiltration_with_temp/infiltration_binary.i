@@ -278,7 +278,7 @@ displace_value_y = 1
 []
 
 [NEML2]
-  input = 'neml2/neml2_material.i'
+  input = 'neml2/pyrolysis.i'
   cli_args = 'kk_L=${kk_PR} permeability_power=${permeability_power} rhof_nu=${fparse rho_PR/mu_PR}
               rhof2_nu=${fparse rho_PR^2/mu_PR} phif_residual=${phi_L_residual} rho_f=${fparse rho_PR}
               brooks_corey_threshold=${brooks_corey_threshold} capillary_pressure_power=${capillary_pressure_power}
