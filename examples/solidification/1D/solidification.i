@@ -1,37 +1,38 @@
 ############### Input ################
 # Simulation parameters
-dt = 10
-total_time = 3600
-t_ramp = ${total_time}
-nx = 1000
-xmax = 60
+dt = 20
+nx = 200
 
-# Initial conditions
-T0 = 1950 #K
-Tmin = 500 #K
+# models
+Ts = 1687
+Tf = 1717
 
-# Solidifciation Kinetics
-Ts_low = 1687 #K
-Ts_high = '${fparse Ts_low + 20}'
-H_latent = 50555 #J mol-1
+# solidfication information
+H_latent = 1.8e7 # erg/g
+Tmax = 1800 #K
+T0 = 1000 #K
 
-# Molar Mass # g mol-1
-M_Si = 28.085
-
-# denisty # g cm-3
+# density
 rho_Si = 2.57 # density at liquid state
+rho_Si_s = 2.37 # density at solid state
 
-# specifc heat # Jg-1K-1
-cp_Si = 0.7
+# specific heat
+cp_Si = 0.7e7 # erg/g-K
+cp_Si_s = 0.5e7 # erg/g-K
 
-# thermal conductivity # W/cm-1K-1
-K = 7.5 # constant but could be a function of temperature
+# Heating conditions
+dTdt = 10 #Kmin-1 heating rate
+t_ramp = '${fparse (Tmax-T0)/dTdt*60}' #s
+total_time = '${fparse t_ramp}'
 
-## Calculations
-omega_Si = '${fparse M_Si/rho_Si}'
-Tr0 = '${fparse (T0-Ts_low)/(Ts_high-Ts_low)}'
-f0 = '${fparse if(Tr0<0,1,if(Tr0>1,0,1-(3*Tr0^2-2*Tr0^3)))}'
-q0 = '${fparse if(f0<0,0,if(f0>1,H_latent,H_latent*(3*f0^2-2*f0^3)))}'
+# thermal conductivity
+kappa_eff = 4e4 #[gcm/s3/K]
+
+xmax = 2.0
+
+[GlobalParams]
+    temperature = 'T'
+[]
 
 [Mesh]
     type = GeneratedMesh
@@ -46,62 +47,60 @@ q0 = '${fparse if(f0<0,0,if(f0>1,H_latent,H_latent*(3*f0^2-2*f0^3)))}'
 []
 
 [Kernels]
-    [heat_eq]
-        type = PumaDiffusion
-        diffusivity = K
-        diffusivity_derivative = dKdt
+    ## Temperature flow ---------------------------------------------------------
+    [temp_time]
+        type = PumaCoupledTimeDerivative
+        material_prop = M1
         variable = T
+        material_temperature_derivative = dM1dT
     []
-    [time_dot]
-        type = PumaTimeDerivative
+    [temp_diffusion]
+        type = PumaCoupledDiffusion
+        material_prop = M2
         variable = T
-        material_prop = rhocp
-        material_prop_derivative = drhocpdT
+        material_temperature_derivative = dM2dT
     []
     [reaction_heat]
-        type = MaterialSource #negative if source, positive if sink
-        prop = qdot
-        prop_derivative = neml2_dqdotdT
-        coefficient = '${fparse -1/omega_Si}'
+        type = CoupledMaterialSource
+        material_prop = M3
         variable = T
+        material_temperature_derivative = dM3dT
     []
 []
 
 [NEML2]
-    input = 'neml2/Si_solidify.i'
-    cli_args = 'Ts_low=${Ts_low} Ts_high=${Ts_high} H_latent=${H_latent}'
+    input = 'neml2/neml2_material.i'
+    cli_args = 'cp_rho_Si=${fparse cp_Si*rho_Si} cp_rho_Si_s=${fparse cp_Si_s*rho_Si_s}
+                Ts=${Ts} Tf=${Tf} mL=${fparse rho_Si*H_latent}'
     [all]
         model = 'model'
         verbose = true
         device = 'cpu'
 
-        moose_input_types = 'VARIABLE      POSTPROCESSOR POSTPROCESSOR MATERIAL'
-        moose_inputs = '     T             time          time          q'
-        neml2_inputs = '     forces/T      forces/t      old_forces/t  old_state/q'
+        moose_input_types = 'VARIABLE     VARIABLE      POSTPROCESSOR POSTPROCESSOR'
+        moose_inputs = '     T            T             time          time'
+        neml2_inputs = '     old_forces/T forces/T      forces/t      old_forces/t'
 
-        moose_output_types = 'MATERIAL      MATERIAL   MATERIAL'
-        moose_outputs = '     f_Si_solid    qdot       q'
-        neml2_outputs = '     state/f_solid state/qdot state/q'
+        moose_output_types = 'MATERIAL     MATERIAL   MATERIAL     MATERIAL     MATERIAL'
+        moose_outputs = '     M1           M3         phif_l       phif_s       omcliquid'
+        neml2_outputs = '     state/M1     state/M3   state/phif_l state/phif_s state/omcliquid'
 
-        moose_derivative_types = 'MATERIAL'
-        moose_derivatives = 'neml2_dqdotdT'
-        neml2_derivatives = 'state/qdot forces/T'
-
-        initialize_outputs = '      f_Si_solid q'
-        initialize_output_values = 'f0_Si_solid q0'
+        moose_derivative_types = 'MATERIAL           MATERIAL'
+        moose_derivatives = '     dM3dT              dM1dT'
+        neml2_derivatives = '     state/M3 forces/T; state/M1 forces/T'
     []
 []
 
 [Materials]
     [init_mat]
         type = GenericConstantMaterial
-        prop_names = ' f0_Si_solid q0'
-        prop_values = '${f0}       ${q0}'
+        prop_names = 'M2'
+        prop_values = '${kappa_eff}'
     []
-    [const_mat_prop]
+    [init_mat_derivative]
         type = GenericConstantMaterial
-        prop_names = 'K rhocp dKdt drhocpdT'
-        prop_values = '${K} ${fparse rho_Si*cp_Si} 0.0 0.0'
+        prop_names = 'dM2dT'
+        prop_values = '0.0'
     []
 []
 
@@ -113,21 +112,39 @@ q0 = '${fparse if(f0<0,0,if(f0>1,H_latent,H_latent*(3*f0^2-2*f0^3)))}'
 []
 
 [AuxVariables]
-    [f_Si_solid]
+    [heat_release]
         order = CONSTANT
         family = MONOMIAL
         [AuxKernel]
             type = MaterialRealAux
-            property = f_Si_solid
+            property = M3
             execute_on = 'INITIAL TIMESTEP_END'
         []
     []
-    [qdot]
+    [solidification_fraction]
         order = CONSTANT
         family = MONOMIAL
         [AuxKernel]
             type = MaterialRealAux
-            property = qdot
+            property = omcliquid
+            execute_on = 'INITIAL TIMESTEP_END'
+        []
+    []
+    [phif_l]
+        order = CONSTANT
+        family = MONOMIAL
+        [AuxKernel]
+            type = MaterialRealAux
+            property = phif_l
+            execute_on = 'INITIAL TIMESTEP_END'
+        []
+    []
+    [phif_s]
+        order = CONSTANT
+        family = MONOMIAL
+        [AuxKernel]
+            type = MaterialRealAux
+            property = phif_s
             execute_on = 'INITIAL TIMESTEP_END'
         []
     []
@@ -140,7 +157,7 @@ q0 = '${fparse if(f0<0,0,if(f0>1,H_latent,H_latent*(3*f0^2-2*f0^3)))}'
         num_points = ${nx}
         sort_by = 'x'
         start_point = '0 0 0'
-        variable = 'T f_Si_solid qdot'
+        variable = 'T heat_release solidification_fraction phif_l phif_s'
     []
 []
 
@@ -148,7 +165,7 @@ q0 = '${fparse if(f0<0,0,if(f0>1,H_latent,H_latent*(3*f0^2-2*f0^3)))}'
     [alphaIC]
         type = ConstantIC
         variable = T
-        value = ${T0}
+        value = ${Tmax}
     []
 []
 
@@ -156,7 +173,7 @@ q0 = '${fparse if(f0<0,0,if(f0>1,H_latent,H_latent*(3*f0^2-2*f0^3)))}'
     [tramp]
         type = PiecewiseLinear
         x = '0 ${t_ramp}'
-        y = '${T0} ${Tmin}'
+        y = '${Tmax} ${T0}'
     []
 []
 
@@ -167,12 +184,6 @@ q0 = '${fparse if(f0<0,0,if(f0>1,H_latent,H_latent*(3*f0^2-2*f0^3)))}'
         variable = T
         function = tramp
     []
-    #[right]
-    #    type = FunctionDirichletBC
-    #    boundary = right
-    #    variable = T
-    #    function = tramp
-    #[]
 []
 
 [Executioner]
@@ -185,12 +196,12 @@ q0 = '${fparse if(f0<0,0,if(f0>1,H_latent,H_latent*(3*f0^2-2*f0^3)))}'
     nl_abs_tol = 1e-8
 
     end_time = ${total_time}
-    dtmax = '${fparse dt}'
+    dtmax = '${fparse 10*dt}'
 
     [TimeStepper]
         type = IterationAdaptiveDT
         dt = ${dt} #s
-        optimal_iterations = 6
+        optimal_iterations = 7
         iteration_window = 2
         cutback_factor = 0.5
         cutback_factor_at_failure = 0.1
@@ -207,7 +218,7 @@ q0 = '${fparse if(f0<0,0,if(f0>1,H_latent,H_latent*(3*f0^2-2*f0^3)))}'
     []
     [csv]
         type = CSV
-        file_base = 'checkqdot/out'
+        file_base = 'example_1D/out'
     []
     print_linear_residuals = false
 []

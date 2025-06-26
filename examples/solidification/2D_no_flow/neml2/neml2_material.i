@@ -20,16 +20,6 @@
         coefficients = -1.0
         constant_coefficient = 1.0
     []
-    [liquid_phase_fluid]
-        type = ScalarMultiplication
-        from_var = 'state/cliquid state/phif'
-        to_var = 'state/phif_l'
-    []
-    [solid_phase_fluid]
-        type = ScalarMultiplication
-        from_var = 'state/omcliquid state/phif'
-        to_var = 'state/phif_s'
-    []
     [phase_regularization]
         type = SymmetricHermiteInterpolation
         argument = 'forces/T'
@@ -40,26 +30,37 @@
     [Tdot]
         type = ScalarVariableRate
         variable = 'forces/T'
-        rate = 'forces/Tdot0'
+        rate = 'state/Tdot'
         time = 'forces/t'
     []
-    [Tdot0]
-        type = ScalarLinearCombination
-        from_var = 'forces/Tdot0'
-        to_var = 'state/Tdot'
-        constant_coefficient = 0.0001
-    []
-    [M10]
+    [heatrelease]
         type = ScalarMultiplication
-        from_var = 'state/eta state/J state/Tdot'
-        to_var = 'state/M10'
-        coefficient = '${mrhofL}'
+        from_var = 'state/eta state/Tdot state/J'
+        to_var = 'state/M3'
+        coefficient = '${mL}'
     []
-    [model_solidification]
+    [liquid_phase_fluid]
+        type = ScalarMultiplication
+        from_var = 'state/cliquid state/phif'
+        to_var = 'state/phif_l'
+    []
+    [solid_phase_fluid]
+        type = ScalarMultiplication
+        from_var = 'state/omcliquid state/phif'
+        to_var = 'state/phif_s'
+    []
+    [rhocp]
+        type = ScalarLinearCombination
+        from_var = 'state/phif_l state/phif_s'
+        to_var = 'state/rhocp'
+        coefficients = '${cp_rho_Si} ${cp_rho_Si_s}'
+    []
+    [solidification_model]
         type = ComposedModel
-        models = 'phif Tdot0 Jacobian liquid_phase_portion solid_phase_portion liquid_phase_fluid solid_phase_fluid
-                    phase_regularization Tdot M10'
-        additional_outputs = 'state/cliquid state/omcliquid'
+        models = 'Jacobian phif liquid_phase_portion solid_phase_portion
+                    liquid_phase_fluid solid_phase_fluid
+                    phase_regularization Tdot heatrelease rhocp'
+        additional_outputs = 'state/cliquid state/omcliquid state/phif_l state/phif_s'
     []
     ## solid mechanics ----------------------------------------------------------
     [Jacobian]
@@ -69,8 +70,8 @@
     []
     [M1]
         type = ScalarMultiplication
-        coefficient = "${rho_f}"
-        from_var = 'state/J state/cliquid'
+        coefficient = 1.0
+        from_var = 'state/J state/rhocp'
         to_var = 'state/M1'
     []
     [fluid_F]
@@ -110,7 +111,7 @@
         type = LinearIsotropicElasticity
         strain = 'state/Ee'
         stress = 'state/pk2_SR2'
-        coefficients = '1000 ${nu}'
+        coefficients = '${E} 0.3'
         coefficient_types = 'YOUNGS_MODULUS POISSONS_RATIO'
     []
     [S_pk2_R2]
@@ -133,12 +134,12 @@
     []
     [model_sm]
         type = ComposedModel
-        models = 'Jacobian M1 model_pk1'
+        models = 'model_pk1'
     []
     ############################################################
     [model]
         type = ComposedModel
-        models = 'model_sm model_solidification'
-        additional_outputs = 'state/phif_s state/phif_l'
+        models = 'model_sm solidification_model Jacobian M1 '
+        additional_outputs = 'state/phif_s state/phif_l '
     []
 []
