@@ -11,7 +11,7 @@ Tf = 1727
 M_Si = 28.085
 
 # solidfication information
-H_latent = 1.8e7 # erg/g
+H_latent = 1.8e8 # erg/g
 Tmax = 1800 #K
 T0 = 300 #K
 

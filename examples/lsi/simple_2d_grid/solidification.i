@@ -30,7 +30,7 @@ rho_C = 2.26e3
 cp_Si = 7.1e2
 cp_SiC = 5.5e2
 cp_C = 1.5e2
-rho_Si_s = 2.37 # density at solid state
+rho_Si_s = 2.37e3 # density at solid state
 swelling_coef = 1e-2
 
 E = 400e9
@@ -39,8 +39,6 @@ therm_expansion = 1e-6
 T0 = 1730
 Tref = 1730
 total_time = 3600 #s
-
-advs_coefficient = 1e-6
 
 # --------------- Mesh BCs
 xroll = 0.1
@@ -206,23 +204,20 @@ dOmega_f = '${fparse (omega_Si_s-omega_Si_l)/omega_Si_l}'
 [NEML2]
   input = 'neml2/neml2_solidification.i'
   cli_args = 'rho_f=${fparse rho_Si}
-              nu=${nu} advs_coefficient=${advs_coefficient}
+              nu=${nu}
               therm_expansion=${therm_expansion} Tref=${Tref}
               Ts=${Ts} Tf=${Tf} swelling_coef=${swelling_coef}
               rhofL=${fparse rho_Si*H_latent} dOmega_f=${dOmega_f}
-              rhocp_Si=${fparse rho_Si*cp_Si} rhocp_SiC=${fparse rho_SiC*cp_SiC} rhocp_C=${fparse rho_C*cp_C}
-              E=${E}'
+              rhocp_Si=${fparse rho_Si*cp_Si} rhocp_SiC=${fparse rho_SiC*cp_SiC}
+              rhocp_C=${fparse rho_C*cp_C} E=${E} mL=${fparse rho_Si*H_latent}'
   [all]
     model = 'model'
     verbose = true
     device = 'cpu'
 
-    moose_input_types = '
-                         VARIABLE      VARIABLE    MATERIAL'
-    moose_inputs = '
-                         T             phif        deformation_gradient'
-    neml2_inputs = '
-                         forces/T      forces/phif forces/F'
+    moose_input_types = 'VARIABLE     VARIABLE      VARIABLE      POSTPROCESSOR POSTPROCESSOR MATERIAL     '
+    moose_inputs = '     T            T             phif          time          time          deformation_gradient'
+    neml2_inputs = '     old_forces/T forces/T      forces/phif   forces/t      old_forces/t  forces/F'
 
     moose_parameter_types = 'MATERIAL    MATERIAL    MATERIAL   '
     moose_parameters = '     phis        phip        phinoreact              '

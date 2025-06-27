@@ -88,7 +88,6 @@ g = 1e-6
 #### stress-strain ####
 E = 400e9
 nu = 0.3
-advs_coefficient = 1e-6
 
 # convection coefficients - Wm-2K
 htc = 100
@@ -175,7 +174,6 @@ if run_infiltration:
             "nu={:.16f}".format(nu),
             "therm_expansion={:.16f}".format(g),
             "T0={:.16f}".format(T0),
-            "advs_coefficient={:.16f}".format(advs_coefficient),
             "meshfile={}".format(mesh_file),
             "gravity={:.16f}".format(gravity),
             "xroll={:.16f}".format(xroll),
@@ -212,8 +210,6 @@ print("\n")
 
 print("Starting Solidification")
 
-fdas
-
 proc2 = subprocess.Popen(
     [
         "mpiexec",
@@ -237,7 +233,6 @@ proc2 = subprocess.Popen(
         "Ts={:.16f}".format(Ts),
         "Tf={:.16f}".format(Tf),
         "H_latent={:.16f}".format(H_latent),
-        "advs_coefficient={:.16f}".format(advs_coefficient),
         "meshfile={}".format(mesh_file),
         "xroll={:.16f}".format(xroll),
         "yroll={:.16f}".format(yroll),

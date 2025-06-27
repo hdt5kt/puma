@@ -146,7 +146,7 @@
         lower_bound = '0'
         upper_bound = '0.1'
     []
-       [capillary_pressure]
+    [capillary_pressure]
         type = BrooksCoreyCapillaryPressure
         threshold_pressure = '${brooks_corey_threshold}'
         exponent = '${capillary_pressure_power}'

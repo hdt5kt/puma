@@ -196,12 +196,9 @@ dOmega_f = '${fparse (omega_Si_s-omega_Si_l)/omega_Si_l}'
     verbose = true
     device = 'cpu'
 
-    moose_input_types = '
-                         VARIABLE      VARIABLE    MATERIAL'
-    moose_inputs = '
-                         T             phif        deformation_gradient'
-    neml2_inputs = '
-                         forces/T      forces/phif forces/F'
+    moose_input_types = 'VARIABLE     VARIABLE      VARIABLE      POSTPROCESSOR POSTPROCESSOR MATERIAL     '
+    moose_inputs = '     T            T             phif          time          time          deformation_gradient'
+    neml2_inputs = '     old_forces/T forces/T      forces/phif   forces/t      old_forces/t  forces/F'
 
     moose_parameter_types = 'MATERIAL    MATERIAL    MATERIAL   '
     moose_parameters = '     phis        phip        phinoreact              '

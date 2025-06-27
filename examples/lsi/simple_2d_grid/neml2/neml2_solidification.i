@@ -32,34 +32,32 @@
         lower_bound = '${Ts}'
         upper_bound = '${Tf}'
     []
+    [Tdot]
+        type = ScalarVariableRate
+        variable = 'forces/T'
+        rate = 'state/Tdot'
+        time = 'forces/t'
+    []
     [M10]
         type = ScalarMultiplication
-        from_var = 'state/eta state/J'
+        from_var = 'state/eta state/Tdot state/J'
         to_var = 'state/M10'
-        coefficient = '${rhofL}'
+        coefficient = '${mL}'
     []
     [model_solidification]
         type = ComposedModel
-        models = 'Jacobian liquid_phase_portion solid_phase_portion
+        models = 'Tdot Jacobian liquid_phase_portion solid_phase_portion
                     liquid_phase_fluid solid_phase_fluid
                     phase_regularization M10'
-        additional_outputs = 'state/cliquid state/omcliquid'
+        additional_outputs = 'state/cliquid state/omcliquid state/phif_l state/phif_s'
     []
-    ## solid mechanics ----------------------------------------------------------
+    # solidification add-on ###########
+    ########
     [Jacobian]
         type = R2Determinant
         input = 'forces/F'
         determinant = 'state/J'
     []
-    [M1]
-        type = ScalarMultiplication
-        coefficient = "${rho_f}"
-        from_var = 'state/J state/cliquid'
-        to_var = 'state/M1'
-    []
-    ########
-    # solidification add-on ###########
-    ########
     [fluid_F]
         type = SwellingAndPhaseChangeDeformationJacobian
         phase_fraction = 'state/cliquid'
@@ -113,15 +111,11 @@
         to = 'state/pk1'
         invert_B = false
     []
-    [model_pk1]
+    [model_sm]
         type = ComposedModel
         models = 'fluid_F FFf
                   Fthermal totalF green_strain S_pk2 S_pk2_R2 S_pk1'
         additional_outputs = 'state/Fe'
-    []
-    [model_sm]
-        type = ComposedModel
-        models = 'Jacobian M1 model_pk1'
     []
     ## previous information
     [phis]

@@ -42,7 +42,6 @@ nu = 0.3
 therm_expansion = 1e-6
 T0 = 300
 
-advs_coefficient = 10.0
 meshfile = 'gold/2D_plane.msh'
 gravity = 0.0 # 980.665
 
@@ -308,7 +307,7 @@ chem_ratio = '${fparse k_SiC/k_C}'
   cli_args = 'kk_L=${perm_ref} permeability_power=${permeability_power} rhof_nu=${fparse rho_Si/mu_Si}
               rhof2_nu=${fparse rho_Si^2/mu_Si} phif_residual=${phi_L_residual} rho_f=${fparse rho_Si}
               brooks_corey_threshold=${brooks_corey_threshold} capillary_pressure_power=${capillary_pressure_power}
-              nu=${nu} advs_coefficient=${advs_coefficient} hf_rhof_nu=${fparse hf*rho_Si/mu_Si}
+              nu=${nu} hf_rhof_nu=${fparse hf*rho_Si/mu_Si}
               hf_rhof2_nu=${fparse hf*rho_Si^2/mu_Si} therm_expansion=${therm_expansion} Tref=${T0}
               omega_Si=${omega_Si} D=${D_bar} oSiCm1=${oSiCm1} oCm1=${oCm1}
               chem_ratio=${chem_ratio} mchem_P=${fparse -k_SiC} rhof=${rho_Si}
@@ -485,7 +484,7 @@ chem_ratio = '${fparse k_SiC/k_C}'
   nl_max_its = 12
 
   end_time = ${total_time}
-  dtmax = '${fparse 10*dt}'
+  dtmax = '${fparse 100*dt}'
 
   [TimeStepper]
     type = IterationAdaptiveDT
