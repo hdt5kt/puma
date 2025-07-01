@@ -119,7 +119,9 @@
     ###                                                          ###
     ###                                                          ###
     ################################################################
-    # get the source term
+    ##
+    ## get the source term
+    ##
     [outer_radius_new]
         type = CylindricalChannelGeometry
         solid_fraction = 'state/phis'
@@ -163,10 +165,10 @@
         to_var = 'state/phidotf'
         coefficients = '${omega_Si}'
     []
-    [M5]
+    [Ms]
         type = ScalarLinearCombination
         from_var = 'state/phidotf'
-        to_var = 'state/M5'
+        to_var = 'state/Ms'
         coefficients = '${rhof}'
     []
     [void]
@@ -176,18 +178,128 @@
         coefficients = '-1.0 -1.0 -1.0 -1.0'
         constant_coefficient = 1.0
     []
-    [model_M5]
+    [model_Ms]
         type = ComposedModel
-        models = 'M5 void alpha_rate liquid_consumption_rate
+        models = 'Ms alpha_rate liquid_consumption_rate
         outer_radius_new reaction_rate_new fluid_reactivity_new solid_reactivity_new'
     []
-    # get the other material term
+    ##
+    ##
+    ## solid mechanics ----------------------------------------------------------
+    [Jacobian]
+        type = R2Determinant
+        input = 'forces/F'
+        determinant = 'state/J'
+    []
+    [M1]
+        type = ScalarLinearCombination
+        coefficients = "${rho_f}"
+        from_var = 'state/J'
+        to_var = 'state/M1'
+    []
+    [fluid_F]
+        type = SwellingAndPhaseChangeDeformationJacobian
+        phase_fraction = 1.0
+        swelling_coefficient = ${swelling_coef}
+        reference_volume_difference = 0.0
+        jacobian = 'state/Jf'
+        fluid_fraction = 'forces/phif'
+    []
+    # thermal add-on ###########
+    [Fthermal]
+        type = ThermalDeformationJacobian
+        temperature = 'forces/T'
+        reference_temperature = ${Tref}
+        CTE = ${therm_expansion}
+        jacobian = 'state/Jt'
+    []
+    [FFf]
+        type = ScalarMultiplication
+        from_var = 'state/Jt state/Jf'
+        to_var = 'state/Jtotal'
+    []
+    # -----------------------------
+    [totalF]
+        type = VolumeAdjustDeformationGradient
+        input = 'forces/F'
+        output = 'state/Fe'
+        jacobian = 'state/Jtotal'
+    []
+    ########
+    [green_strain]
+        type = GreenLagrangeStrain
+        deformation_gradient = 'state/Fe'
+        strain = 'state/Ee'
+    []
+    [S_pk2]
+        type = LinearIsotropicElasticity
+        strain = 'state/Ee'
+        stress = 'state/pk2_SR2'
+        coefficients = '${E} ${nu}'
+        coefficient_types = 'YOUNGS_MODULUS POISSONS_RATIO'
+    []
+    [S_pk2_R2]
+        type = SR2toR2
+        input = 'state/pk2_SR2'
+        output = 'state/pk2'
+    []
+    [S_pk1]
+        type = R2Multiplication
+        A = 'forces/F'
+        B = 'state/pk2'
+        to = 'state/pk1'
+        invert_B = false
+    []
+    [model_pk1]
+        type = ComposedModel
+        models = 'fluid_F FFf
+                  Fthermal totalF green_strain S_pk2 S_pk2_R2 S_pk1'
+        additional_outputs = 'state/Fe state/Jf state/Jt'
+    []
+    ############################################################
+    [stress_induce_pressure]
+        type = AdvectiveStress
+        coefficient = '${swelling_coef}'
+        js = 'state/Jf'
+        jt = 'state/Jt'
+        deformation_gradient = 'forces/F'
+        pk1_stress = 'state/pk1'
+        advective_stress = 'state/Ps'
+    []
+    [stress_scale]
+        type = ScalarMultiplication
+        from_var = 'state/Ps state/Seff_cap'
+        to_var = 'state/SPs'
+    []
+    [advective_stress]
+        type = ComposedModel
+        models = 'stress_scale stress_induce_pressure'
+    []
+    #-------------------------------
+    [model_sm]
+        type = ComposedModel
+        models = 'Jacobian M1 model_pk1 advective_stress'
+        additional_outputs = 'state/pk1'
+    []
+    #################################################################
+    ## porous flow -----------------------------------------------------------------
+    [phinoreact]
+        type = ScalarParameterToState
+        from = 0.0
+        to = 'state/phinoreact'
+    []
     [phif_max]
         type = ScalarLinearCombination
-        from_var = 'state/phip state/phis'
+        from_var = 'state/phip state/phis state/phinoreact'
         to_var = 'state/phif_max'
-        coefficients = '-1.0 -1.0'
+        coefficients = '-1.0 -1.0 -1.0'
         constant_coefficient = 1.0
+    []
+    [phip_total]
+        type = ScalarLinearCombination
+        from_var = 'state/phip state/phinoreact'
+        to_var = 'state/phiptotal'
+        coefficients = '1.0 1.0'
     []
     [permeability]
         type = PowerLawPermeability
@@ -199,10 +311,10 @@
     []
     [effective_saturation]
         type = EffectiveSaturation
-        residual_saturation = 0.00001
+        residual_saturation = 0.0
         fluid_fraction = 'forces/phif'
         max_fraction = 'state/phif_max'
-        effective_saturation = 'state/Seff'
+        effective_saturation = 'state/Seff_cap'
     []
     [M3]
         type = ScalarLinearCombination
@@ -213,33 +325,39 @@
     [M4]
         type = ScalarMultiplication
         coefficient = "${rhof2_nu}"
-        from_var = 'state/perm state/Seff'
+        from_var = 'state/perm state/Seff_cap'
         to_var = 'state/M4'
     []
     [capillary_pressure]
         type = BrooksCoreyCapillaryPressure
         threshold_pressure = '${brooks_corey_threshold}'
         exponent = '${capillary_pressure_power}'
-        effective_saturation = 'state/Seff'
+        effective_saturation = 'state/Seff_cap'
         capillary_pressure = 'state/Pc'
-        log_extension = true
-        transition_saturation = 0.1
+        log_extension = false
+    []
+    [M5]
+        type = ScalarLinearCombination
+        from_var = 'state/Pc state/SPs'
+        to_var = 'state/M5'
+        coefficients = '-1.0 1.0'
     []
     [M6]
         type = ScalarLinearCombination
-        from_var = 'state/Pc'
+        from_var = 'state/phis state/phip forces/phif state/phinoreact'
         to_var = 'state/M6'
-        coefficients = '-1.0'
+        coefficients = '${rhocp_C} ${rhocp_SiC} ${rhocp_Si} ${rhocp_SiC}'
     []
-    [model_M346]
+    [model_M3456]
         type = ComposedModel
-        models = 'phif_max
-        permeability effective_saturation capillary_pressure M3 M4 M6'
+        models = 'phip_total void phif_max phinoreact model_sm
+        permeability effective_saturation capillary_pressure M3 M4 M5 M6
+        '
         additional_outputs = 'state/perm state/phif_max'
     []
     [model]
         type = ComposedModel
-        models = 'model_solver model_M5 model_M346'
+        models = 'model_solver model_Ms model_M3456'
         additional_outputs = 'state/phip state/phis'
     []
 []

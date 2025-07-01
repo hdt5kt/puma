@@ -30,7 +30,7 @@ rho_C = 2.26e3
 cp_Si = 7.1e2
 cp_SiC = 5.5e2
 cp_C = 1.5e2
-rho_Si_s = 2.37e1 # density at solid state
+rho_Si_s = 2.37e3 # density at solid state
 swelling_coef = 1e-2
 
 E = 400e9
@@ -40,7 +40,13 @@ T0 = 1730
 Tref = 1730
 total_time = 3600 #s
 
-advs_coefficient = 1e-6
+# --------------- Mesh BCs
+xroll = 0.1
+yroll = 0
+zroll = 0
+xfix = 0
+yfix = 0
+zfix = 0
 
 meshfile = 'gold/2D_plane.msh'
 
@@ -49,7 +55,7 @@ omega_Si_l = '${fparse M_Si/rho_Si}'
 dOmega_f = '${fparse (omega_Si_s-omega_Si_l)/omega_Si_l}'
 
 [GlobalParams]
-  displacements = 'disp_x disp_y disp_z'
+  displacements = 'disp_x disp_y'
   temperature = T
   fluid_fraction = phif
 []
@@ -117,14 +123,6 @@ dOmega_f = '${fparse (omega_Si_s-omega_Si_l)/omega_Si_l}'
     material_pressure_derivative = zeroR2
     material_temperature_derivative = dpk1dT
   []
-  [offDiagStressDiv_z]
-    type = MomentumBalanceCoupledJacobian
-    component = 2
-    variable = disp_z
-    material_fluid_fraction_derivative = dpk1dphif
-    material_pressure_derivative = zeroR2
-    material_temperature_derivative = dpk1dT
-  []
 []
 
 [AuxVariables]
@@ -186,12 +184,12 @@ dOmega_f = '${fparse (omega_Si_s-omega_Si_l)/omega_Si_l}'
 [NEML2]
   input = 'neml2/neml2_solidification.i'
   cli_args = 'rho_f=${fparse rho_Si}
-              nu=${nu} advs_coefficient=${advs_coefficient}
+              nu=${nu}
               therm_expansion=${therm_expansion} Tref=${Tref}
               Ts=${Ts} Tf=${Tf} swelling_coef=${swelling_coef}
               rhofL=${fparse rho_Si*H_latent} dOmega_f=${dOmega_f}
-              rhocp_Si=${fparse rho_Si*cp_Si} rhocp_SiC=${fparse rho_SiC*cp_SiC} rhocp_C=${fparse rho_C*cp_C}
-              E=${E}'
+              rhocp_Si=${fparse rho_Si*cp_Si} rhocp_SiC=${fparse rho_SiC*cp_SiC}
+              rhocp_C=${fparse rho_C*cp_C} E=${E} mL=${fparse rho_Si*H_latent}'
   [all]
     model = 'model'
     verbose = true
@@ -205,19 +203,25 @@ dOmega_f = '${fparse (omega_Si_s-omega_Si_l)/omega_Si_l}'
     moose_parameters = '     phis        phip        phinoreact              '
     neml2_parameters = '     phis_param  phip_param  phinoreact_param '
 
-    moose_output_types = 'MATERIAL   MATERIAL   MATERIAL   MATERIAL     MATERIAL     MATERIAL'
-    moose_outputs = '     pk1_stress M6         M10        phif_l       phif_s       solidification_fraction'
-    neml2_outputs = '     state/pk1  state/M6   state/M10  state/phif_l state/phif_s state/omcliquid'
+    moose_output_types = 'MATERIAL     MATERIAL   MATERIAL   MATERIAL     MATERIAL
+                          MATERIAL     MATERIAL'
+    moose_outputs = '     pk1_stress   M6         M10        phif_l       M7
+                          phif_s       solidification_fraction'
+    neml2_outputs = '     state/pk1    state/M6   state/M10  state/phif_l state/M7
+                          state/phif_s state/omcliquid'
 
     moose_derivative_types = 'MATERIAL               MATERIAL
                               MATERIAL               MATERIAL
-                              MATERIAL               MATERIAL'
+                              MATERIAL               MATERIAL
+                              MATERIAL'
     moose_derivatives = '     pk1_jacobian           dpk1dT
                               dM10dT                 dM10dF
-                              dpk1dphif              dM6dF'
+                              dpk1dphif              dM6dF
+                              dM7dT'
     neml2_derivatives = '     state/pk1 forces/F;    state/pk1 forces/T;
                               state/M10 forces/T;    state/M10 forces/F;
-                              state/pk1 forces/phif; state/M6  forces/F'
+                              state/pk1 forces/phif; state/M6  forces/F;
+                              state/M7  forces/T'
   []
 []
 
@@ -241,7 +245,7 @@ dOmega_f = '${fparse (omega_Si_s-omega_Si_l)/omega_Si_l}'
     constant_names = 'htc t_ramp dTdt  T0'
     constant_expressions = '${htc} ${t_ramp} ${dTdt} ${T0}'
     postprocessor_names = 'time'
-    boundary = 'bottom front top left right back'
+    boundary = 'interface'
   []
 []
 
@@ -256,45 +260,36 @@ dOmega_f = '${fparse (omega_Si_s-omega_Si_l)/omega_Si_l}'
   [boundary]
     type = ADMatNeumannBC
     boundary_material = q_boundary
-    boundary = 'bottom front top left right back'
+    boundary = 'interface'
     variable = T
     value = -1
   []
-  [roller_bot]
+  [roller]
     type = DirichletBC
-    boundary = 'B2 B4'
+    boundary = roll
     value = 0.0
-    variable = disp_z
+    variable = disp_y
   []
   [fix_x]
     type = DirichletBC
-    boundary = 'B1 B3'
+    boundary = fix
     value = 0.0
     variable = disp_x
   []
   [fix_y]
     type = DirichletBC
-    boundary = 'B1 B3'
+    boundary = fix
     value = 0.0
     variable = disp_y
-  []
-  [fix_z]
-    type = DirichletBC
-    boundary = 'B1 B3'
-    value = 0.0
-    variable = disp_z
   []
 []
 
 [Executioner]
   type = Transient
   solve_type = 'newton'
-  petsc_options = '-ksp_converged_reason'
-  petsc_options_iname = '-pc_type -pc_factor_shift_type' #-snes_type'
-  petsc_options_value = 'lu NONZERO' # vinewtonrsls'
-  reuse_preconditioner = true
+  petsc_options_iname = '-pc_type' #-snes_type'
+  petsc_options_value = 'lu' # vinewtonrsls'
   automatic_scaling = true
-  residual_and_jacobian_together = 'true'
 
   line_search = none
 
@@ -314,10 +309,6 @@ dOmega_f = '${fparse (omega_Si_s-omega_Si_l)/omega_Si_l}'
     cutback_factor_at_failure = 0.1
     growth_factor = 1.2
     linear_iteration_ratio = 10000
-  []
-
-  [Quadrature]
-    order = CONSTANT
   []
 
   #fixed_point_max_its = 10

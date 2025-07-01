@@ -181,6 +181,19 @@
         rate = 'state/Tdot'
         time = 'forces/t'
     []
+    [cL]
+        type = ScalarMultiplication
+        from_var = 'state/eta'
+        to_var = 'state/cL'
+        coefficient = '${H_latent}'
+    []
+    [ceff]
+        type = ScalarLinearCombination
+        from_var = 'state/cL'
+        to_var = 'state/ceff'
+        coefficients = '${o_cp_Si}'
+        constant_coefficient = 1.0
+    []
     [M1]
         type = ScalarMultiplication
         coefficient = '${rho_f}'

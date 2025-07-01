@@ -171,9 +171,9 @@
     []
     [void]
         type = ScalarLinearCombination
-        from_var = 'state/phip state/phis forces/phif'
+        from_var = 'state/phip state/phis forces/phif state/phinoreact '
         to_var = 'state/poro'
-        coefficients = '-1.0 -1.0 -1.0'
+        coefficients = '-1.0 -1.0 -1.0 -1.0'
         constant_coefficient = 1.0
     []
     [model_M5]
@@ -193,6 +193,12 @@
         to_var = 'state/phif_max'
         coefficients = '-1.0 -1.0 -1.0'
         constant_coefficient = 1.0
+    []
+    [phip_total]
+        type = ScalarLinearCombination
+        from_var = 'state/phip state/phinoreact'
+        to_var = 'state/phiptotal'
+        coefficients = '1.0 1.0'
     []
     [permeability]
         type = PowerLawPermeability
@@ -221,7 +227,7 @@
         from_var = 'state/perm state/Seff'
         to_var = 'state/M4'
     []
-       [capillary_pressure]
+    [capillary_pressure]
         type = BrooksCoreyCapillaryPressure
         threshold_pressure = '${brooks_corey_threshold}'
         exponent = '${capillary_pressure_power}'

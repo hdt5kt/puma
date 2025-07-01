@@ -271,7 +271,8 @@ displace_value_y = 1
         formulation = TOTAL
         volumetric_locking_correction = true
         generate_output = "pk1_stress_xx pk1_stress_yy pk1_stress_zz 
-                            pk1_stress_xy pk1_stress_xz pk1_stress_yz vonmises_pk1_stress"
+                            pk1_stress_xy pk1_stress_xz pk1_stress_yz
+                            vonmises_pk1_stress max_principal_pk1_stress"
       []
     []
   []

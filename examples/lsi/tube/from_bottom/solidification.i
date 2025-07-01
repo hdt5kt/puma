@@ -173,7 +173,8 @@ dOmega_f = '${fparse (omega_Si_s-omega_Si_l)/omega_Si_l}'
         formulation = TOTAL
         volumetric_locking_correction = true
         generate_output = "pk1_stress_xx pk1_stress_yy pk1_stress_zz 
-                            pk1_stress_xy pk1_stress_xz pk1_stress_yz vonmises_pk1_stress"
+                            pk1_stress_xy pk1_stress_xz pk1_stress_yz
+                            vonmises_pk1_stress max_principal_pk1_stress"
       []
     []
   []
@@ -218,11 +219,7 @@ dOmega_f = '${fparse (omega_Si_s-omega_Si_l)/omega_Si_l}'
 []
 
 [Materials]
-  [constant]
-    type = GenericConstantMaterial
-    prop_names = '               M7'
-    prop_values = '${fparse kappa_eff}'
-  []
+
   [constant_derivative]
     type = GenericConstantMaterial
     prop_names = ' dM6dT       dM7dT dM6dphif dM7dphif dM10dphif'

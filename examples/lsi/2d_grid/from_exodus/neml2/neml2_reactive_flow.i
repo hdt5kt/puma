@@ -171,16 +171,9 @@
         to_var = 'state/Ms'
         coefficients = '${rhof}'
     []
-    [void]
-        type = ScalarLinearCombination
-        from_var = 'state/phip state/phis forces/phif'
-        to_var = 'state/poro'
-        coefficients = '-1.0 -1.0 -1.0'
-        constant_coefficient = 1.0
-    []
     [model_Ms]
         type = ComposedModel
-        models = 'Ms void alpha_rate liquid_consumption_rate
+        models = 'Ms alpha_rate liquid_consumption_rate
         outer_radius_new reaction_rate_new fluid_reactivity_new solid_reactivity_new'
     []
     ##
@@ -288,12 +281,25 @@
         from = 0.0
         to = 'state/phinoreact'
     []
+    [void]
+        type = ScalarLinearCombination
+        from_var = 'state/phip state/phis forces/phif state/phinoreact'
+        to_var = 'state/poro'
+        coefficients = '-1.0 -1.0 -1.0 -1.0'
+        constant_coefficient = 1.0
+    []
     [phif_max]
         type = ScalarLinearCombination
         from_var = 'state/phip state/phis state/phinoreact'
         to_var = 'state/phif_max'
         coefficients = '-1.0 -1.0 -1.0'
         constant_coefficient = 1.0
+    []
+    [phip_total]
+        type = ScalarLinearCombination
+        from_var = 'state/phip state/phinoreact'
+        to_var = 'state/phiptotal'
+        coefficients = '1.0 1.0'
     []
     [permeability]
         type = PowerLawPermeability
@@ -328,8 +334,7 @@
         exponent = '${capillary_pressure_power}'
         effective_saturation = 'state/Seff_cap'
         capillary_pressure = 'state/Pc'
-        log_extension = true
-        transition_saturation = 0.1
+        log_extension = false
     []
     [M5]
         type = ScalarLinearCombination
@@ -345,7 +350,7 @@
     []
     [model_M3456]
         type = ComposedModel
-        models = 'phif_max phinoreact model_sm
+        models = 'phip_total void phif_max phinoreact model_sm
         permeability effective_saturation capillary_pressure M3 M4 M5 M6
         '
         additional_outputs = 'state/perm state/phif_max'

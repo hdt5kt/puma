@@ -11,7 +11,7 @@ t_heat = 200
 
 dTdt = 1 # deg per s
 
-brooks_corey_threshold = 1e6 #Pa
+brooks_corey_threshold = 1e4 #Pa
 capillary_pressure_power = 3
 phi_L_residual = 0.0
 
@@ -42,9 +42,16 @@ nu = 0.3
 therm_expansion = 1e-6
 T0 = 300
 
-advs_coefficient = 10.0
-# meshfile = 'gold/tube_all.exo'
+meshfile = 'gold/2D_plane.msh'
 gravity = 0.0 # 980.665
+
+# --------------- Mesh BCs
+xroll = 0.1
+yroll = 0
+zroll = 0
+xfix = 0
+yfix = 0
+zfix = 0
 
 # material property
 D_LP = 2.65e-6 # cm2 s-1
@@ -69,7 +76,7 @@ cp_C = 1.5e2
 k_C = 1.0
 k_SiC = 1.0
 
-num_file_data = 3139
+num_file_data = 400
 
 ##
 ##
@@ -87,11 +94,32 @@ oSiCm1 = '${fparse 1/omega_SiC}'
 chem_ratio = '${fparse k_SiC/k_C}'
 
 [GlobalParams]
-  displacements = 'disp_x disp_y disp_z'
+  displacements = 'disp_x disp_y'
   pressure = P
   fluid_fraction = phif
   temperature = T
   stabilize_strain = true
+[]
+
+[Mesh]
+  [mesh0]
+    type = FileMeshGenerator
+    file = '${meshfile}'
+  []
+  [rollingnode]
+    type = BoundingBoxNodeSetGenerator
+    bottom_left = '${fparse xroll-0.00000001} ${fparse yroll-0.00000001} ${fparse zroll-0.00000001}'
+    input = mesh0
+    new_boundary = 'roll'
+    top_right = '${fparse xroll+0.00000001} ${fparse yroll+0.00000001} ${fparse zroll+0.00000001}'
+  []
+  [fixnode]
+    type = BoundingBoxNodeSetGenerator
+    bottom_left = '${fparse xfix-0.00000001} ${fparse yfix-0.00000001} ${fparse zfix-0.00000001}'
+    input = rollingnode
+    new_boundary = 'fix'
+    top_right = '${fparse xfix+0.00000001} ${fparse yfix+0.00000001} ${fparse zfix+0.00000001}'
+  []
 []
 
 [Variables]
@@ -136,7 +164,7 @@ chem_ratio = '${fparse k_SiC/k_C}'
   [gravity]
     type = CoupledAdditiveFlux
     material_prop = M4
-    value = '0.0 0.0 ${gravity}'
+    value = '0.0 ${gravity} 0.0'
     variable = phif
     material_fluid_fraction_derivative = dM4dphif
     material_pressure_derivative = dM4dP
@@ -181,6 +209,7 @@ chem_ratio = '${fparse k_SiC/k_C}'
     material_temperature_derivative = dM7dT
     material_deformation_gradient_derivative = zeroR2
   []
+  ##
   ## solid mechanics ---------------------------------------------------------
   [offDiagStressDiv_x]
     type = MomentumBalanceCoupledJacobian
@@ -194,14 +223,6 @@ chem_ratio = '${fparse k_SiC/k_C}'
     type = MomentumBalanceCoupledJacobian
     component = 1
     variable = disp_y
-    material_fluid_fraction_derivative = dpk1dphif
-    material_pressure_derivative = zeroR2
-    material_temperature_derivative = dpk1dT
-  []
-  [offDiagStressDiv_z]
-    type = MomentumBalanceCoupledJacobian
-    component = 2
-    variable = disp_z
     material_fluid_fraction_derivative = dpk1dphif
     material_pressure_derivative = zeroR2
     material_temperature_derivative = dpk1dT
@@ -287,7 +308,7 @@ chem_ratio = '${fparse k_SiC/k_C}'
   cli_args = 'kk_L=${perm_ref} permeability_power=${permeability_power} rhof_nu=${fparse rho_Si/mu_Si}
               rhof2_nu=${fparse rho_Si^2/mu_Si} phif_residual=${phi_L_residual} rho_f=${fparse rho_Si}
               brooks_corey_threshold=${brooks_corey_threshold} capillary_pressure_power=${capillary_pressure_power}
-              nu=${nu} advs_coefficient=${advs_coefficient} hf_rhof_nu=${fparse hf*rho_Si/mu_Si}
+              nu=${nu} hf_rhof_nu=${fparse hf*rho_Si/mu_Si}
               hf_rhof2_nu=${fparse hf*rho_Si^2/mu_Si} therm_expansion=${therm_expansion} Tref=${T0}
               omega_Si=${omega_Si} D=${D_bar} oSiCm1=${oSiCm1} oCm1=${oCm1}
               chem_ratio=${chem_ratio} mchem_P=${fparse -k_SiC} rhof=${rho_Si}
@@ -311,13 +332,13 @@ chem_ratio = '${fparse k_SiC/k_C}'
 
     moose_output_types = 'MATERIAL       MATERIAL         MATERIAL   MATERIAL    MATERIAL    MATERIAL
                           MATERIAL       MATERIAL         MATERIAL   MATERIAL
-                          MATERIAL       MATERIAL'
+                          MATERIAL       MATERIAL         MATERIAL'
     moose_outputs = '     pk1_stress     M1               M6         M3          M4          M5
                           poro           phis             perm       phip
-                          Ms             non_liquid     '
+                          Ms             non_liquid       phiptotal'
     neml2_outputs = '     state/pk1      state/M1         state/M6   state/M3    state/M4    state/M5
                           state/poro     state/phis       state/perm state/phip
-                          state/Ms       state/phif_max '
+                          state/Ms       state/phif_max   state/phiptotal'
 
     moose_derivative_types = 'MATERIAL                MATERIAL              MATERIAL
                               MATERIAL                MATERIAL              MATERIAL
@@ -361,7 +382,6 @@ chem_ratio = '${fparse k_SiC/k_C}'
     type = GenericConstantMaterial
     prop_names = 'phi0_SiC'
     prop_values = '0.0001'
-    constant_on = NONE
   []
   [zeroR2]
     type = GenericConstantRankTwoTensor
@@ -376,7 +396,7 @@ chem_ratio = '${fparse k_SiC/k_C}'
     constant_names = 'htc t_ramp dTdt t_heat T0'
     constant_expressions = '${htc} ${t_ramp} ${dTdt} ${t_heat} ${T0}'
     postprocessor_names = 'time'
-    boundary = 'bottom front left right back'
+    boundary = 'top right'
   []
 []
 
@@ -414,7 +434,7 @@ chem_ratio = '${fparse k_SiC/k_C}'
   []
   [outlet]
     type = InfiltrationWake
-    boundary = 'front left right back'
+    boundary = bottom
     inlet_flux = 0
     outlet_flux = flux_out
     product_fraction = phiptotal
@@ -426,33 +446,39 @@ chem_ratio = '${fparse k_SiC/k_C}'
   [boundary]
     type = ADMatNeumannBC
     boundary_material = q_boundary
-    boundary = 'bottom front left right back'
+    boundary = 'top right'
     variable = T
     value = -1
   []
-  [roller_bot]
+  # [roller_bot]
+  #   type = DirichletBC
+  #   boundary = roll
+  #   value = 0.0
+  #   variable = disp_y
+  # []
+  # [fix_x]
+  #   type = DirichletBC
+  #   boundary = fix
+  #   value = 0.0
+  #   variable = disp_x
+  # []
+  # [fix_y]
+  #   type = DirichletBC
+  #   boundary = fix
+  #   value = 0.0
+  #   variable = disp_y
+  # []
+  [left]
     type = DirichletBC
-    boundary = 'B2 B4'
-    value = 0.0
-    variable = disp_y
-  []
-  [fix_x]
-    type = DirichletBC
-    boundary = 'B1 B3'
+    boundary = left
     value = 0.0
     variable = disp_x
   []
-  [fix_y]
+  [bottom]
     type = DirichletBC
-    boundary = 'B1 B3'
+    boundary = bottom
     value = 0.0
     variable = disp_y
-  []
-  [fix_z]
-    type = DirichletBC
-    boundary = 'B1 B3'
-    value = 0.0
-    variable = disp_z
   []
 []
 
@@ -473,7 +499,7 @@ chem_ratio = '${fparse k_SiC/k_C}'
   nl_max_its = 12
 
   end_time = ${total_time}
-  dtmax = '${fparse 10*dt}'
+  dtmax = '${fparse 100*dt}'
 
   [TimeStepper]
     type = IterationAdaptiveDT

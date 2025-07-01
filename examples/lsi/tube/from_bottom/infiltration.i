@@ -275,7 +275,8 @@ chem_ratio = '${fparse k_SiC/k_C}'
         formulation = TOTAL
         volumetric_locking_correction = true
         generate_output = "pk1_stress_xx pk1_stress_yy pk1_stress_zz 
-                            pk1_stress_xy pk1_stress_xz pk1_stress_yz vonmises_pk1_stress"
+                            pk1_stress_xy pk1_stress_xz pk1_stress_yz
+                            vonmises_pk1_stress max_principal_pk1_stress"
       []
     []
   []
@@ -320,17 +321,17 @@ chem_ratio = '${fparse k_SiC/k_C}'
 
     moose_derivative_types = 'MATERIAL                MATERIAL              MATERIAL
                               MATERIAL                MATERIAL              MATERIAL
-                              MATERIAL                MATERIAL
+                              MATERIAL                MATERIAL              MATERIAL
                               MATERIAL                MATERIAL
                               MATERIAL                MATERIAL            '
     moose_derivatives = '     dM5dphif                dM1dF                 pk1_jacobian
                               dpk1dphif               dM5dF                 dpk1dT
-                              dM4dphif                dM6dphif
+                              dM4dphif                dM6dphif              dphiptotaldphif
                               dM3dphif                dMsdphif
                               dphipdphif              dphisdphif'
     neml2_derivatives = '     state/M5  forces/phif;  state/M1 forces/F;    state/pk1 forces/F;
                               state/pk1 forces/phif;  state/M5 forces/F;    state/pk1 forces/T;
-                              state/M4  forces/phif;  state/M6  forces/phif;
+                              state/M4  forces/phif;  state/M6  forces/phif;state/phiptotal forces/phif;
                               state/M3  forces/phif;  state/Ms forces/phif;
                               state/phip forces/phif; state/phis forces/phif'
 
@@ -405,8 +406,8 @@ chem_ratio = '${fparse k_SiC/k_C}'
     boundary = bottom
     inlet_flux = flux_in
     outlet_flux = flux_out
-    product_fraction = phip
-    product_fraction_derivative = dphipdphif
+    product_fraction = phiptotal
+    product_fraction_derivative = dphiptotaldphif
     solid_fraction = phis
     solid_fraction_derivative = dphisdphif
     variable = phif
@@ -416,8 +417,8 @@ chem_ratio = '${fparse k_SiC/k_C}'
     boundary = 'front left right back'
     inlet_flux = 0
     outlet_flux = flux_out
-    product_fraction = phip
-    product_fraction_derivative = dphipdphif
+    product_fraction = phiptotal
+    product_fraction_derivative = dphiptotaldphif
     solid_fraction = phis
     solid_fraction_derivative = dphisdphif
     variable = phif
@@ -484,7 +485,7 @@ chem_ratio = '${fparse k_SiC/k_C}'
     growth_factor = 1.2
     linear_iteration_ratio = 10000
   []
-  
+
   #fixed_point_max_its = 10
   #fixed_point_algorithm = picard
   #fixed_point_abs_tol = 1e-06

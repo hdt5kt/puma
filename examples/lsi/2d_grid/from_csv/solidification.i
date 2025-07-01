@@ -1,53 +1,3 @@
-############### Input ################
-
-# Simulation parameters
-dt = 5 #s
-
-t_ramp = 1800
-
-dTdt = -0.83333 # deg per s
-
-# Molar Mass # g mol-1
-M_Si = 0.028085
-
-# thermal conductivity
-kappa_eff = 100 #[gcm/s3/K]
-
-#boundary conditions
-htc = 100 #g / s3-K
-
-#solidification information
-Ts = 1687 #K
-Tf = '${fparse Ts+30}' #K
-
-H_latent = 1800e0 #J/kg
-# denisty # kg m-3
-rho_Si = 2.57e3 # density at liquid state
-rho_SiC = 3.21e3
-rho_C = 2.26e3
-
-# heat capacity Jkg-1K-1
-cp_Si = 7.1e2
-cp_SiC = 5.5e2
-cp_C = 1.5e2
-rho_Si_s = 2.37e3 # density at solid state
-swelling_coef = 1e-2
-
-E = 400e9
-nu = 0.3
-therm_expansion = 1e-6
-T0 = 1730
-Tref = 1730
-total_time = 3600 #s
-
-# --------------- Mesh BCs
-xroll = 0.1
-yroll = 0
-zroll = 0
-xfix = 0
-yfix = 0
-zfix = 0
-
 meshfile = 'gold/2D_plane.msh'
 
 omega_Si_s = '${fparse M_Si/rho_Si_s}'
@@ -57,7 +7,7 @@ dOmega_f = '${fparse (omega_Si_s-omega_Si_l)/omega_Si_l}'
 [GlobalParams]
   displacements = 'disp_x disp_y'
   temperature = T
-  fluid_fraction = phif
+  stabilize_strain = true
 []
 
 [Mesh]
@@ -84,64 +34,35 @@ dOmega_f = '${fparse (omega_Si_s-omega_Si_l)/omega_Si_l}'
 [Variables]
   [T]
   []
-  [phif]
-  []
 []
 
 [Kernels]
   ## Temperature flow ---------------------------------------------------------
   [temp_time]
     type = PumaCoupledTimeDerivative
-    material_prop = M6
+    material_prop = M6pM10
     variable = T
-    material_temperature_derivative = dM6dT
-    material_fluid_fraction_derivative = dM6dphif
-    material_deformation_gradient_derivative = dM6dF
-    stabilize_strain = true
+    material_temperature_derivative = dM6pM10dT
+    material_deformation_gradient_derivative = dM6pM10dF
   []
   [temp_diffusion]
     type = PumaCoupledDiffusion
     material_prop = M7
     variable = T
     material_temperature_derivative = dM7dT
-    material_fluid_fraction_derivative = dM7dphif
     material_deformation_gradient_derivative = zeroR2
-    stabilize_strain = true
-  []
-  [temp_source]
-    type = PumaCoupledTimeDerivative
-    material_prop = M10
-    variable = T
-    material_temperature_derivative = dM10dT
-    material_fluid_fraction_derivative = dM10dphif
-    material_deformation_gradient_derivative = dM10dF
-    stabilize_strain = true
-  []
-  ## no fluid flow---------------------------------------------------------
-  [phif_time]
-    type = PumaCoupledTimeDerivative
-    material_prop = 1
-    variable = phif
-    material_temperature_derivative = 0
-    material_fluid_fraction_derivative = 0
-    material_deformation_gradient_derivative = zeroR2
-    stabilize_strain = true
   []
   ## solid mechanics ---------------------------------------------------------
   [offDiagStressDiv_x]
     type = MomentumBalanceCoupledJacobian
     component = 0
     variable = disp_x
-    material_fluid_fraction_derivative = dpk1dphif
-    material_pressure_derivative = zeroR2
     material_temperature_derivative = dpk1dT
   []
   [offDiagStressDiv_y]
     type = MomentumBalanceCoupledJacobian
     component = 1
     variable = disp_y
-    material_fluid_fraction_derivative = dpk1dphif
-    material_pressure_derivative = zeroR2
     material_temperature_derivative = dpk1dT
   []
 []
@@ -183,6 +104,15 @@ dOmega_f = '${fparse (omega_Si_s-omega_Si_l)/omega_Si_l}'
       execute_on = 'INITIAL TIMESTEP_END'
     []
   []
+  [kappa_eff]
+    order = CONSTANT
+    family = MONOMIAL
+    [AuxKernel]
+      type = MaterialRealAux
+      property = M7
+      execute_on = 'INITIAL TIMESTEP_END'
+    []
+  []
 []
 
 [Physics]
@@ -204,7 +134,7 @@ dOmega_f = '${fparse (omega_Si_s-omega_Si_l)/omega_Si_l}'
 [NEML2]
   input = 'neml2/neml2_solidification.i'
   cli_args = 'rho_f=${fparse rho_Si}
-              nu=${nu}
+              nu=${nu} o_cp_Si=${fparse 1.0/cp_Si} H_latent=${H_latent} kappa_eff=${kappa_eff}
               therm_expansion=${therm_expansion} Tref=${Tref}
               Ts=${Ts} Tf=${Tf} swelling_coef=${swelling_coef}
               rhofL=${fparse rho_Si*H_latent} dOmega_f=${dOmega_f}
@@ -215,43 +145,41 @@ dOmega_f = '${fparse (omega_Si_s-omega_Si_l)/omega_Si_l}'
     verbose = true
     device = 'cpu'
 
-    moose_input_types = 'VARIABLE     VARIABLE      VARIABLE      POSTPROCESSOR POSTPROCESSOR MATERIAL     '
-    moose_inputs = '     T            T             phif          time          time          deformation_gradient'
-    neml2_inputs = '     old_forces/T forces/T      forces/phif   forces/t      old_forces/t  forces/F'
+    moose_input_types = 'VARIABLE     VARIABLE      POSTPROCESSOR POSTPROCESSOR MATERIAL     '
+    moose_inputs = '     T            T             time          time          deformation_gradient'
+    neml2_inputs = '     old_forces/T forces/T      forces/t      old_forces/t  forces/F'
 
-    moose_parameter_types = 'MATERIAL    MATERIAL    MATERIAL   '
-    moose_parameters = '     phis        phip        phinoreact              '
-    neml2_parameters = '     phis_param  phip_param  phinoreact_param '
+    moose_parameter_types = 'MATERIAL    MATERIAL    MATERIAL    MATERIAL   '
+    moose_parameters = '     phif        phis        phip        phinoreact              '
+    neml2_parameters = '     phif_param  phis_param  phip_param  phinoreact_param '
 
-    moose_output_types = 'MATERIAL     MATERIAL   MATERIAL   MATERIAL
-                          MATERIAL     MATERIAL'
-    moose_outputs = '     pk1_stress   M6         M10        phif_l
-                          phif_s       solidification_fraction'
-    neml2_outputs = '     state/pk1    state/M6   state/M10  state/phif_l
-                          state/phif_s state/omcliquid'
+    moose_output_types = 'MATERIAL     MATERIAL     MATERIAL   MATERIAL     MATERIAL
+                          MATERIAL     MATERIAL     MATERIAL'
+    moose_outputs = '     pk1_stress   M6           M10        phif_l       M7
+                          phif_s       M6pM10       solidification_fraction '
+    neml2_outputs = '     state/pk1    state/M6     state/M10  state/phif_l state/M7
+                          state/phif_s state/M6pM10 state/omcliquid'
 
     moose_derivative_types = 'MATERIAL               MATERIAL
+                              MATERIAL               MATERIAL
                               MATERIAL               MATERIAL
                               MATERIAL               MATERIAL'
     moose_derivatives = '     pk1_jacobian           dpk1dT
                               dM10dT                 dM10dF
-                              dpk1dphif              dM6dF'
+                              dM6dF                  dM6pM10dT
+                              dM7dT                  dM6pM10dF'
     neml2_derivatives = '     state/pk1 forces/F;    state/pk1 forces/T;
                               state/M10 forces/T;    state/M10 forces/F;
-                              state/pk1 forces/phif; state/M6  forces/F'
+                              state/M6  forces/F;    state/M6pM10  forces/T;
+                              state/M7  forces/T;    state/M6pM10  forces/F'
   []
 []
 
 [Materials]
-  [constant]
-    type = GenericConstantMaterial
-    prop_names = '               M7'
-    prop_values = '${fparse kappa_eff}'
-  []
   [constant_derivative]
     type = GenericConstantMaterial
-    prop_names = ' dM6dT       dM7dT dM6dphif dM7dphif dM10dphif'
-    prop_values = '0.0         0.0   0.0      0.0      0.0'
+    prop_names = ' dM6dT'
+    prop_values = '0.0'
   []
   [zeroR2]
     type = GenericConstantRankTwoTensor
@@ -266,7 +194,7 @@ dOmega_f = '${fparse (omega_Si_s-omega_Si_l)/omega_Si_l}'
     constant_names = 'htc t_ramp dTdt  T0'
     constant_expressions = '${htc} ${t_ramp} ${dTdt} ${T0}'
     postprocessor_names = 'time'
-    boundary = 'bottom sides'
+    boundary = 'top right'
   []
 []
 
@@ -281,25 +209,43 @@ dOmega_f = '${fparse (omega_Si_s-omega_Si_l)/omega_Si_l}'
   [boundary]
     type = ADMatNeumannBC
     boundary_material = q_boundary
-    boundary = 'bottom sides'
+    boundary = 'top right'
     variable = T
     value = -1
   []
-  [roller]
+  # [boundary_2]
+  #   type = FunctionDirichletBC
+  #   boundary = 'bottom'
+  #   function = T_ramp
+  #   variable = T
+  # []
+  # [roller]
+  #   type = DirichletBC
+  #   boundary = roll
+  #   value = 0.0
+  #   variable = disp_y
+  # []
+  # [fix_x]
+  #   type = DirichletBC
+  #   boundary = fix
+  #   value = 0.0
+  #   variable = disp_x
+  # []
+  # [fix_y]
+  #   type = DirichletBC
+  #   boundary = fix
+  #   value = 0.0
+  #   variable = disp_y
+  # []
+  [left]
     type = DirichletBC
-    boundary = roll
-    value = 0.0
-    variable = disp_y
-  []
-  [fix_x]
-    type = DirichletBC
-    boundary = fix
+    boundary = left
     value = 0.0
     variable = disp_x
   []
-  [fix_y]
+  [bottom]
     type = DirichletBC
-    boundary = fix
+    boundary = bottom
     value = 0.0
     variable = disp_y
   []
@@ -307,16 +253,26 @@ dOmega_f = '${fparse (omega_Si_s-omega_Si_l)/omega_Si_l}'
 
 [Executioner]
   type = Transient
-  solve_type = 'newton'
-  petsc_options_iname = '-pc_type' #-snes_type'
-  petsc_options_value = 'lu' # vinewtonrsls'
+  solve_type = NEWTON
+
+  petsc_options = '-ksp_converged_reason'
+  petsc_options_iname = '-pc_type' # -pc_factor_shift_type' #-snes_type'
+  petsc_options_value = 'lu' # NONZERO' # vinewtonrsls'
+
+  reuse_preconditioner = true
+  reuse_preconditioner_max_linear_its = 25
   automatic_scaling = true
+
+  residual_and_jacobian_together = 'true'
 
   line_search = none
 
-  nl_abs_tol = 1e-06
-  nl_rel_tol = 1e-08
+  nl_abs_tol = 1e-05
+  nl_rel_tol = 1e-07
   nl_max_its = 12
+
+  l_max_its = 100
+  l_tol = 1e-06
 
   end_time = ${total_time}
   dtmax = '${fparse 50*dt}'
@@ -324,12 +280,18 @@ dOmega_f = '${fparse (omega_Si_s-omega_Si_l)/omega_Si_l}'
   [TimeStepper]
     type = IterationAdaptiveDT
     dt = ${dt} #s
-    optimal_iterations = 6
+    optimal_iterations = 7
     iteration_window = 2
-    cutback_factor = 0.5
+    cutback_factor = 0.2
     cutback_factor_at_failure = 0.1
     growth_factor = 1.2
     linear_iteration_ratio = 10000
+  []
+
+  [Predictor]
+    type = SimplePredictor
+    scale = 1.0
+    skip_after_failed_timestep = true
   []
 
   #fixed_point_max_its = 10

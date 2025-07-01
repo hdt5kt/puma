@@ -150,6 +150,12 @@
         from_var = 'state/J state/rhocp_eff'
         to_var = 'state/M6'
     []
+    [M7]
+        type = ScalarLinearCombination
+        from_var = 'state/ceff'
+        to_var = 'state/M7'
+        coefficients = '${kappa_eff}'
+    []
     [model_M6]
         type = ComposedModel
         models = 'Jacobian rhocp_eff phis phip phinoreact M6'
@@ -157,7 +163,7 @@
     ############################################################
     [model]
         type = ComposedModel
-        models = 'model_sm model_solidification model_M6'
+        models = 'model_sm model_solidification model_M6 M7'
         additional_outputs = 'state/phif_s state/phif_l state/omcliquid'
     []
 []

@@ -43,7 +43,8 @@ therm_expansion = 1e-6
 T0 = 300
 
 meshfile = 'gold/2D_plane.msh'
-gravity = 0.0 # 980.665
+gravity_x = 0.0 # 980.665
+gravity_y = 0.0 # 980.665
 
 # --------------- Mesh BCs
 xroll = 0.1
@@ -76,8 +77,6 @@ cp_C = 1.5e2
 k_C = 1.0
 k_SiC = 1.0
 
-num_file_data = 400
-
 ##
 ##
 ##
@@ -99,27 +98,6 @@ chem_ratio = '${fparse k_SiC/k_C}'
   fluid_fraction = phif
   temperature = T
   stabilize_strain = true
-[]
-
-[Mesh]
-  [mesh0]
-    type = FileMeshGenerator
-    file = '${meshfile}'
-  []
-  [rollingnode]
-    type = BoundingBoxNodeSetGenerator
-    bottom_left = '${fparse xroll-0.00000001} ${fparse yroll-0.00000001} ${fparse zroll-0.00000001}'
-    input = mesh0
-    new_boundary = 'roll'
-    top_right = '${fparse xroll+0.00000001} ${fparse yroll+0.00000001} ${fparse zroll+0.00000001}'
-  []
-  [fixnode]
-    type = BoundingBoxNodeSetGenerator
-    bottom_left = '${fparse xfix-0.00000001} ${fparse yfix-0.00000001} ${fparse zfix-0.00000001}'
-    input = rollingnode
-    new_boundary = 'fix'
-    top_right = '${fparse xfix+0.00000001} ${fparse yfix+0.00000001} ${fparse zfix+0.00000001}'
-  []
 []
 
 [Variables]
@@ -164,7 +142,7 @@ chem_ratio = '${fparse k_SiC/k_C}'
   [gravity]
     type = CoupledAdditiveFlux
     material_prop = M4
-    value = '0.0 ${gravity} 0.0'
+    value = '${gravity_x} ${gravity_y} 0.0'
     variable = phif
     material_fluid_fraction_derivative = dM4dphif
     material_pressure_derivative = dM4dP
@@ -248,6 +226,15 @@ chem_ratio = '${fparse k_SiC/k_C}'
       execute_on = 'INITIAL TIMESTEP_END'
     []
   []
+  [phi_noreact]
+    order = CONSTANT
+    family = MONOMIAL
+    [AuxKernel]
+      type = MaterialRealAux
+      property = phi0SiC_noreact
+      execute_on = 'INITIAL TIMESTEP_END'
+    []
+  []
   [phi_react]
     order = CONSTANT
     family = MONOMIAL
@@ -296,7 +283,8 @@ chem_ratio = '${fparse k_SiC/k_C}'
         formulation = TOTAL
         volumetric_locking_correction = true
         generate_output = "pk1_stress_xx pk1_stress_yy pk1_stress_zz 
-                            pk1_stress_xy pk1_stress_xz pk1_stress_yz vonmises_pk1_stress"
+                            pk1_stress_xy pk1_stress_xz pk1_stress_yz
+                            vonmises_pk1_stress max_principal_pk1_stress"
       []
     []
   []
@@ -331,27 +319,27 @@ chem_ratio = '${fparse k_SiC/k_C}'
 
     moose_output_types = 'MATERIAL       MATERIAL         MATERIAL   MATERIAL    MATERIAL    MATERIAL
                           MATERIAL       MATERIAL         MATERIAL   MATERIAL
-                          MATERIAL       MATERIAL'
+                          MATERIAL       MATERIAL         MATERIAL'
     moose_outputs = '     pk1_stress     M1               M6         M3          M4          M5
                           poro           phis             perm       phip
-                          Ms             non_liquid'
+                          Ms             non_liquid       phiptotal'
     neml2_outputs = '     state/pk1      state/M1         state/M6   state/M3    state/M4    state/M5
                           state/poro     state/phis       state/perm state/phip
-                          state/Ms       state/phif_max'
+                          state/Ms       state/phif_max   state/phiptotal'
 
     moose_derivative_types = 'MATERIAL                MATERIAL              MATERIAL
                               MATERIAL                MATERIAL              MATERIAL
-                              MATERIAL                MATERIAL
+                              MATERIAL                MATERIAL              MATERIAL
                               MATERIAL                MATERIAL
                               MATERIAL                MATERIAL            '
     moose_derivatives = '     dM5dphif                dM1dF                 pk1_jacobian
                               dpk1dphif               dM5dF                 dpk1dT
-                              dM4dphif                dM6dphif
+                              dM4dphif                dM6dphif              dphiptotaldphif
                               dM3dphif                dMsdphif
                               dphipdphif              dphisdphif'
     neml2_derivatives = '     state/M5  forces/phif;  state/M1 forces/F;    state/pk1 forces/F;
                               state/pk1 forces/phif;  state/M5 forces/F;    state/pk1 forces/T;
-                              state/M4  forces/phif;  state/M6  forces/phif;
+                              state/M4  forces/phif;  state/M6  forces/phif;state/phiptotal forces/phif;
                               state/M3  forces/phif;  state/Ms forces/phif;
                               state/phip forces/phif; state/phis forces/phif'
 
@@ -369,7 +357,7 @@ chem_ratio = '${fparse k_SiC/k_C}'
   [constant_derivative]
     type = GenericConstantMaterial
     prop_names = ' dM1dP    dM1dphif dM1dT    dM2dphif dM2dP dM2dT
-                    dM3dP    dM3dT    dM4dP    dM4dT dM5dP dM5dT
+                   dM3dP    dM3dT    dM4dP    dM4dT dM5dP dM5dT
                    dM6dP    dM6dT    dM7dphif dM7dP    dM7dT
                    dMsdT    dMsdP'
     prop_values = '0.0      0.0      0.0       0.0      0.0   0.0
@@ -395,7 +383,7 @@ chem_ratio = '${fparse k_SiC/k_C}'
     constant_names = 'htc t_ramp dTdt t_heat T0'
     constant_expressions = '${htc} ${t_ramp} ${dTdt} ${t_heat} ${T0}'
     postprocessor_names = 'time'
-    boundary = 'bottom sides'
+    boundary = 'interface'
   []
 []
 
@@ -422,22 +410,22 @@ chem_ratio = '${fparse k_SiC/k_C}'
 [BCs]
   [bottom_inlet]
     type = InfiltrationWake
-    boundary = bottom
+    boundary = 'interface'
     inlet_flux = flux_in
     outlet_flux = flux_out
-    product_fraction = phip
-    product_fraction_derivative = dphipdphif
+    product_fraction = phiptotal
+    product_fraction_derivative = dphiptotaldphif
     solid_fraction = phis
     solid_fraction_derivative = dphisdphif
     variable = phif
   []
   [outlet]
     type = InfiltrationWake
-    boundary = bottom
+    boundary = 'interface'
     inlet_flux = 0
     outlet_flux = flux_out
-    product_fraction = phip
-    product_fraction_derivative = dphipdphif
+    product_fraction = phiptotal
+    product_fraction_derivative = dphiptotaldphif
     solid_fraction = phis
     solid_fraction_derivative = dphisdphif
     variable = phif
@@ -445,7 +433,7 @@ chem_ratio = '${fparse k_SiC/k_C}'
   [boundary]
     type = ADMatNeumannBC
     boundary_material = q_boundary
-    boundary = 'bottom sides'
+    boundary = 'interface'
     variable = T
     value = -1
   []

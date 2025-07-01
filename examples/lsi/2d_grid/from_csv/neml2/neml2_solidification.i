@@ -1,4 +1,9 @@
 [Models]
+    [phif]
+        type = ScalarParameterToState
+        from = 1.0
+        to = 'state/phif'
+    []
     ## solidifications ----------------------------------------------------------
     [liquid_phase_portion]
         type = HermiteSmoothStep
@@ -17,12 +22,12 @@
     []
     [liquid_phase_fluid]
         type = ScalarMultiplication
-        from_var = 'state/cliquid forces/phif'
+        from_var = 'state/cliquid state/phif'
         to_var = 'state/phif_l'
     []
     [solid_phase_fluid]
         type = ScalarMultiplication
-        from_var = 'state/omcliquid forces/phif'
+        from_var = 'state/omcliquid state/phif'
         to_var = 'state/phif_s'
     []
     [phase_regularization]
@@ -38,15 +43,28 @@
         rate = 'state/Tdot'
         time = 'forces/t'
     []
+    [cL]
+        type = ScalarMultiplication
+        from_var = 'state/eta'
+        to_var = 'state/cL'
+        coefficient = '${H_latent}'
+    []
+    [ceff]
+        type = ScalarLinearCombination
+        from_var = 'state/cL'
+        to_var = 'state/ceff'
+        coefficients = '${o_cp_Si}'
+        constant_coefficient = 1.0
+    []
     [M10]
         type = ScalarMultiplication
-        from_var = 'state/eta state/Tdot state/J'
+        from_var = 'state/eta state/J'
         to_var = 'state/M10'
         coefficient = '${mL}'
     []
     [model_solidification]
         type = ComposedModel
-        models = 'Tdot Jacobian liquid_phase_portion solid_phase_portion
+        models = 'Tdot cL ceff Jacobian liquid_phase_portion solid_phase_portion
                     liquid_phase_fluid solid_phase_fluid
                     phase_regularization M10'
         additional_outputs = 'state/cliquid state/omcliquid state/phif_l state/phif_s'
@@ -64,7 +82,7 @@
         swelling_coefficient = '${swelling_coef}'
         reference_volume_difference = '${dOmega_f}'
         jacobian = 'state/Jf'
-        fluid_fraction = 'forces/phif'
+        fluid_fraction = 'state/phif'
     []
     # thermal add-on ###########
     [Fthermal]
@@ -135,7 +153,7 @@
     []
     [rhocp_eff]
         type = ScalarLinearCombination
-        from_var = 'state/phis state/phip forces/phif state/phinoreact'
+        from_var = 'state/phis state/phip state/phif state/phinoreact'
         to_var = 'state/rhocp_eff'
         coefficients = '${rhocp_C} ${rhocp_SiC} ${rhocp_Si} ${rhocp_SiC}'
     []
@@ -144,6 +162,18 @@
         from_var = 'state/J state/rhocp_eff'
         to_var = 'state/M6'
     []
+    [M7]
+        type = ScalarLinearCombination
+        from_var = 'state/ceff'
+        to_var = 'state/M7'
+        coefficients = '${kappa_eff}'
+    []
+    [M6pM10]
+        type = ScalarLinearCombination
+        from_var = 'state/M6 state/M10'
+        to_var = 'state/M6pM10'
+        coefficients = '1.0 1.0'
+    []
     [model_M6]
         type = ComposedModel
         models = 'Jacobian rhocp_eff phis phip phinoreact M6'
@@ -151,7 +181,7 @@
     ############################################################
     [model]
         type = ComposedModel
-        models = 'model_sm model_solidification model_M6'
-        additional_outputs = 'state/phif_s state/phif_l state/omcliquid'
+        models = 'phif model_sm model_solidification model_M6 M7 M6pM10'
+        additional_outputs = 'state/phif_s state/phif_l state/omcliquid state/M6 state/M10'
     []
 []

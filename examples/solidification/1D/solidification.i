@@ -8,7 +8,7 @@ Ts = 1687
 Tf = 1717
 
 # solidfication information
-H_latent = 1.8e7 # erg/g
+H_latent = 1.8e10 # erg/g
 Tmax = 1800 #K
 T0 = 1000 #K
 
