@@ -341,3 +341,6 @@ share/
 *.hpc_result
 *.hpc_submit
 puma.yaml
+
+
+.nfs*
