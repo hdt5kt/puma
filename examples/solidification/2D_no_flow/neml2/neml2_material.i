@@ -35,7 +35,7 @@
     []
     [heatrelease]
         type = ScalarMultiplication
-        from_var = 'state/eta state/Tdot state/J'
+        from_var = 'state/eta state/J'
         to_var = 'state/M3'
         coefficient = '${mL}'
     []
@@ -136,10 +136,16 @@
         type = ComposedModel
         models = 'model_pk1'
     []
+    [M1pM3]
+        type = ScalarLinearCombination
+        from_var = 'state/M1 state/M3'
+        to_var = 'state/M1pM3'
+        coefficients = '1.0 1.0'
+    []
     ############################################################
     [model]
         type = ComposedModel
-        models = 'model_sm solidification_model Jacobian M1 '
-        additional_outputs = 'state/phif_s state/phif_l '
+        models = 'model_sm solidification_model Jacobian M1 M1pM3'
+        additional_outputs = 'state/phif_s state/phif_l state/M1 state/M3'
     []
 []

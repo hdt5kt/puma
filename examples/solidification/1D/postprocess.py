@@ -29,12 +29,12 @@ sm = cm.ScalarMappable(norm=norm, cmap="rainbow")
 ### Main ---------------------------------------------------------------------
 
 id = ["results"]
-idlist = [["T", "solidification_fraction", "phif_l", "heat_release"]]
+idlist = [["T", "solidification_fraction", "Tdot", "heat_release"]]
 idy = [
     [
         "temperature (K)",
         "solidification fraction",
-        "fluid volume fraction - liquid state",
+        "dT/dt (K/s)",
         "heat release",
     ],
 ]

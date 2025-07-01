@@ -1,6 +1,6 @@
 xmax = 1.0/10;
 
-nx = 50;
+nx = 100;
 
 Point(1) = {0, 0, 0};
 Point(2) = {xmax, 0, 0};
@@ -24,4 +24,4 @@ Physical Curve("bottom") = {1};
 Physical Surface("all") = 1;
 
 Mesh 2;
-Save "2D_plane.msh";
+Save "2D_plane_100.msh";

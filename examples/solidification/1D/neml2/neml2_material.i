@@ -41,7 +41,7 @@
     []
     [heatrelease]
         type = ScalarMultiplication
-        from_var = 'state/eta state/Tdot'
+        from_var = 'state/eta'
         to_var = 'state/M3'
         coefficient = '${mL}'
     []
@@ -61,11 +61,18 @@
         to_var = 'state/M1'
         coefficients = '${cp_rho_Si} ${cp_rho_Si_s}'
     []
+    [M1pM3]
+        type = ScalarLinearCombination
+        from_var = 'state/M1 state/M3'
+        to_var = 'state/M1pM3'
+        coefficients = '1.0 1.0'
+    []
     [model]
         type = ComposedModel
-        models = 'phif liquid_phase_portion solid_phase_portion
+        models = 'phif liquid_phase_portion solid_phase_portion M1pM3
                     liquid_phase_fluid solid_phase_fluid
                     phase_regularization Tdot heatrelease M1'
-        additional_outputs = 'state/omcliquid state/phif_l state/phif_s'
+        additional_outputs = 'state/omcliquid state/phif_l state/phif_s state/eta state/Tdot
+        state/M1 state/M3'
     []
 []
