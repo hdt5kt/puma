@@ -57,13 +57,32 @@ dOmega_f = '${fparse (omega_Si_s-omega_Si_l)/omega_Si_l}'
 [GlobalParams]
   displacements = 'disp_x disp_y'
   temperature = T
-  fluid_fraction = phif
+  stabilize_strain = true
+[]
+
+[Mesh]
+  [mesh0]
+    type = FileMeshGenerator
+    file = '${meshfile}'
+  []
+  [rollingnode]
+    type = BoundingBoxNodeSetGenerator
+    bottom_left = '${fparse xroll-0.00000001} ${fparse yroll-0.00000001} ${fparse zroll-0.00000001}'
+    input = mesh0
+    new_boundary = 'roll'
+    top_right = '${fparse xroll+0.00000001} ${fparse yroll+0.00000001} ${fparse zroll+0.00000001}'
+  []
+  [fixnode]
+    type = BoundingBoxNodeSetGenerator
+    bottom_left = '${fparse xfix-0.00000001} ${fparse yfix-0.00000001} ${fparse zfix-0.00000001}'
+    input = rollingnode
+    new_boundary = 'fix'
+    top_right = '${fparse xfix+0.00000001} ${fparse yfix+0.00000001} ${fparse zfix+0.00000001}'
+  []
 []
 
 [Variables]
   [T]
-  []
-  [phif]
   []
 []
 
@@ -71,56 +90,29 @@ dOmega_f = '${fparse (omega_Si_s-omega_Si_l)/omega_Si_l}'
   ## Temperature flow ---------------------------------------------------------
   [temp_time]
     type = PumaCoupledTimeDerivative
-    material_prop = M6
+    material_prop = M6pM10
     variable = T
-    material_temperature_derivative = dM6dT
-    material_fluid_fraction_derivative = dM6dphif
-    material_deformation_gradient_derivative = dM6dF
-    stabilize_strain = true
+    material_temperature_derivative = dM6pM10dT
+    material_deformation_gradient_derivative = dM6pM10dF
   []
   [temp_diffusion]
     type = PumaCoupledDiffusion
     material_prop = M7
     variable = T
     material_temperature_derivative = dM7dT
-    material_fluid_fraction_derivative = dM7dphif
     material_deformation_gradient_derivative = zeroR2
-    stabilize_strain = true
-  []
-  [temp_source]
-    type = PumaCoupledTimeDerivative
-    material_prop = M10
-    variable = T
-    material_temperature_derivative = dM10dT
-    material_fluid_fraction_derivative = dM10dphif
-    material_deformation_gradient_derivative = dM10dF
-    stabilize_strain = true
-  []
-  ## no fluid flow---------------------------------------------------------
-  [phif_time]
-    type = PumaCoupledTimeDerivative
-    material_prop = 1
-    variable = phif
-    material_temperature_derivative = 0
-    material_fluid_fraction_derivative = 0
-    material_deformation_gradient_derivative = zeroR2
-    stabilize_strain = true
   []
   ## solid mechanics ---------------------------------------------------------
   [offDiagStressDiv_x]
     type = MomentumBalanceCoupledJacobian
     component = 0
     variable = disp_x
-    material_fluid_fraction_derivative = dpk1dphif
-    material_pressure_derivative = zeroR2
     material_temperature_derivative = dpk1dT
   []
   [offDiagStressDiv_y]
     type = MomentumBalanceCoupledJacobian
     component = 1
     variable = disp_y
-    material_fluid_fraction_derivative = dpk1dphif
-    material_pressure_derivative = zeroR2
     material_temperature_derivative = dpk1dT
   []
 []
@@ -162,6 +154,15 @@ dOmega_f = '${fparse (omega_Si_s-omega_Si_l)/omega_Si_l}'
       execute_on = 'INITIAL TIMESTEP_END'
     []
   []
+  [kappa_eff]
+    order = CONSTANT
+    family = MONOMIAL
+    [AuxKernel]
+      type = MaterialRealAux
+      property = M7
+      execute_on = 'INITIAL TIMESTEP_END'
+    []
+  []
 []
 
 [Physics]
@@ -174,8 +175,7 @@ dOmega_f = '${fparse (omega_Si_s-omega_Si_l)/omega_Si_l}'
         formulation = TOTAL
         volumetric_locking_correction = true
         generate_output = "pk1_stress_xx pk1_stress_yy pk1_stress_zz 
-                            pk1_stress_xy pk1_stress_xz pk1_stress_yz
-                            vonmises_pk1_stress max_principal_pk1_stress"
+                            pk1_stress_xy pk1_stress_xz pk1_stress_yz vonmises_pk1_stress"
       []
     []
   []
@@ -184,7 +184,7 @@ dOmega_f = '${fparse (omega_Si_s-omega_Si_l)/omega_Si_l}'
 [NEML2]
   input = 'neml2/neml2_solidification.i'
   cli_args = 'rho_f=${fparse rho_Si}
-              nu=${nu}
+              nu=${nu} o_cp_Si=${fparse 1.0/cp_Si} H_latent=${H_latent} kappa_eff=${kappa_eff}
               therm_expansion=${therm_expansion} Tref=${Tref}
               Ts=${Ts} Tf=${Tf} swelling_coef=${swelling_coef}
               rhofL=${fparse rho_Si*H_latent} dOmega_f=${dOmega_f}
@@ -195,33 +195,33 @@ dOmega_f = '${fparse (omega_Si_s-omega_Si_l)/omega_Si_l}'
     verbose = true
     device = 'cpu'
 
-    moose_input_types = 'VARIABLE     VARIABLE      VARIABLE      POSTPROCESSOR POSTPROCESSOR MATERIAL     '
-    moose_inputs = '     T            T             phif          time          time          deformation_gradient'
-    neml2_inputs = '     old_forces/T forces/T      forces/phif   forces/t      old_forces/t  forces/F'
+    moose_input_types = 'VARIABLE     VARIABLE      POSTPROCESSOR POSTPROCESSOR MATERIAL     '
+    moose_inputs = '     T            T             time          time          deformation_gradient'
+    neml2_inputs = '     old_forces/T forces/T      forces/t      old_forces/t  forces/F'
 
-    moose_parameter_types = 'MATERIAL    MATERIAL    MATERIAL   '
-    moose_parameters = '     phis        phip        phinoreact              '
-    neml2_parameters = '     phis_param  phip_param  phinoreact_param '
+    moose_parameter_types = 'MATERIAL    MATERIAL    MATERIAL    MATERIAL   '
+    moose_parameters = '     phif        phis        phip        phinoreact              '
+    neml2_parameters = '     phif_param  phis_param  phip_param  phinoreact_param '
 
-    moose_output_types = 'MATERIAL     MATERIAL   MATERIAL   MATERIAL     MATERIAL
-                          MATERIAL     MATERIAL'
-    moose_outputs = '     pk1_stress   M6         M10        phif_l       M7
-                          phif_s       solidification_fraction'
-    neml2_outputs = '     state/pk1    state/M6   state/M10  state/phif_l state/M7
-                          state/phif_s state/omcliquid'
+    moose_output_types = 'MATERIAL     MATERIAL     MATERIAL   MATERIAL     MATERIAL
+                          MATERIAL     MATERIAL     MATERIAL'
+    moose_outputs = '     pk1_stress   M6           M10        phif_l       M7
+                          phif_s       M6pM10       solidification_fraction '
+    neml2_outputs = '     state/pk1    state/M6     state/M10  state/phif_l state/M7
+                          state/phif_s state/M6pM10 state/omcliquid'
 
     moose_derivative_types = 'MATERIAL               MATERIAL
                               MATERIAL               MATERIAL
                               MATERIAL               MATERIAL
-                              MATERIAL'
+                              MATERIAL               MATERIAL'
     moose_derivatives = '     pk1_jacobian           dpk1dT
                               dM10dT                 dM10dF
-                              dpk1dphif              dM6dF
-                              dM7dT'
+                              dM6dF                  dM6pM10dT
+                              dM7dT                  dM6pM10dF'
     neml2_derivatives = '     state/pk1 forces/F;    state/pk1 forces/T;
                               state/M10 forces/T;    state/M10 forces/F;
-                              state/pk1 forces/phif; state/M6  forces/F;
-                              state/M7  forces/T'
+                              state/M6  forces/F;    state/M6pM10  forces/T;
+                              state/M7  forces/T;    state/M6pM10  forces/F'
   []
 []
 
@@ -229,8 +229,8 @@ dOmega_f = '${fparse (omega_Si_s-omega_Si_l)/omega_Si_l}'
 
   [constant_derivative]
     type = GenericConstantMaterial
-    prop_names = ' dM6dT       dM7dT dM6dphif dM7dphif dM10dphif'
-    prop_values = '0.0         0.0   0.0      0.0      0.0'
+    prop_names = ' dM6dT       dM7dT'
+    prop_values = '0.0         0.0'
   []
   [zeroR2]
     type = GenericConstantRankTwoTensor
