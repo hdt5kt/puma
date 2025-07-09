@@ -73,7 +73,7 @@ total_time = '${fparse theat + tcool*3600}'
 []
 
 [NEML2]
-    input = 'neml2/neml2_material.i'
+    input = 'neml2/pyrolysis.i'
     cli_args = 'rho_s=${rho_s} rho_b=${rho_b} rho_g=${rho_g} rho_p=${rho_p} Mref=${Mref}
                 rho_sm1M=${fparse Mref/rho_s} rho_bm1M=${fparse Mref/rho_b}
                 rho_gm1M=${fparse Mref/rho_g} rho_pm1M=${fparse Mref/rho_p}
@@ -127,8 +127,8 @@ total_time = '${fparse theat + tcool*3600}'
 [Materials]
     [init_alpha]
         type = GenericConstantMaterial
-        prop_names = 'alpha0 phiop0'
-        prop_values = '0.0 0.0'
+        prop_names = 'alpha0'
+        prop_values = '0.0'
     []
     [zeroR2]
         type = GenericConstantRankTwoTensor
@@ -363,8 +363,7 @@ total_time = '${fparse theat + tcool*3600}'
 
 [Outputs]
     exodus = true
-    file_base = '${save_folder}/out_cycle${cycle}'
-    # console = true
+    file_base = '${save_folder}/out_cycle${save_cycle}_${save_type}'
     [console]
         type = Console
         execute_postprocessors_on = 'NONE'
@@ -375,7 +374,7 @@ total_time = '${fparse theat + tcool*3600}'
     []
     [csv]
         type = CSV
-        file_base = '${save_folder}/out_cycle${cycle}'
+        file_base = '${save_folder}/out_cycle${save_cycle}_${save_type}'
         execute_on = 'FINAL'
         create_final_symlink = true
     []

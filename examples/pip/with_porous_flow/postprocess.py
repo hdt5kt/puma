@@ -6,7 +6,7 @@ import os
 
 ## INPUT INFORMATION ------------------------------------------------------
 
-postprocess_folder = "main"
+postprocess_folder = "curing_pyro_only"
 base_file = "out_cycle"
 plotfolder = "main/postprocess_results"
 
@@ -47,6 +47,7 @@ def get_statistic(data, keyid):
         np.mean(data[keyid]),
         np.max(data[keyid]),
         np.sum(data[keyid]),
+        np.array(data[keyid][0]),
     ]
 
 
@@ -82,16 +83,16 @@ def trim_and_plot(axis, data, removeid, ls="--", mk="x", col="k", maxmin=False):
     return data
 
 
-wb = np.zeros((100000, 4))
-wp = np.zeros((100000, 4))
-ws = np.zeros((100000, 4))
+wb = np.zeros((100000, 5))
+wp = np.zeros((100000, 5))
+ws = np.zeros((100000, 5))
 
-phip = np.zeros((100000, 4))
-phis = np.zeros((100000, 4))
-phiop = np.zeros((100000, 4))
-phigcp = np.zeros((100000, 4))
+phip = np.zeros((100000, 5))
+phis = np.zeros((100000, 5))
+phiop = np.zeros((100000, 5))
+phigcp = np.zeros((100000, 5))
 
-vonmises = np.zeros((100000, 4))
+vonmises = np.zeros((100000, 5))
 
 for i in range(100000):
     fname = (
@@ -99,6 +100,7 @@ for i in range(100000):
         + "/"
         + base_file
         + str(i + 1)
+        + "_pyrolysis"
         + "_composition_info_FINAL.csv"
     )
     if not os.path.islink(fname):

@@ -12,12 +12,9 @@
         to_var = 'state/M1'
     []
     [fluid_JF]
-        type = SwellingAndPhaseChangeDeformationJacobian
-        phase_fraction = 1.0
-        swelling_coefficient = 0.01 # '${swelling_coefficient}'
-        reference_volume_difference = 0.0
-        jacobian = 'state/Jf'
-        fluid_fraction = 'forces/phif'
+        type = ScalarParameterToState
+        from = 1.0
+        to = 'state/Jf'
     []
     # thermal add-on ###########
     [Fthermal]
@@ -25,7 +22,19 @@
         temperature = 'forces/T'
         reference_temperature = ${Tref}
         CTE = ${therm_expansion}
-        jacobian = 'state/Jt'
+        jacobian = 'state/Jtherm'
+    []
+    [Jvolume]
+        type = ScalarLinearCombination
+        from_var = 'state/V'
+        coefficients = '1.0'
+        coefficient_as_parameter = true
+        to_var = 'state/Jv'
+    []
+    [Jt]
+        type = ScalarMultiplication
+        from_var = 'state/Jtherm state/Jv'
+        to_var = 'state/Jt'
     []
     # -----------------------------
     [Jtotal]

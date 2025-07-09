@@ -68,6 +68,11 @@
         prop_names = 'ws0'
         prop_values = ws0
     []
+    [init_phiop]
+        type = GenericConstantMaterial
+        prop_names = 'phiop0'
+        prop_values = '0.0'
+    []
     [init_mat]
         type = GenericConstantMaterial
         prop_names = 'wgcp0'

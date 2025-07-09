@@ -1,7 +1,7 @@
 [UserObjects]
     [reader_object2]
         type = SolutionUserObject
-        mesh = '${save_folder}/out_cycle${fparse cycle-1}.e'
+        mesh = '${save_folder}/out_cycle${fparse load_cycle}_${load_type}.e'
         system_variables = 'T disp_x disp_y ws wp wgcp o_Vref phiop V'
         execute_on = 'INITIAL'
         timestep = 'LATEST'
@@ -21,7 +21,7 @@
         order = CONSTANT
         family = MONOMIAL
     []
-    [ws0]
+    [wc0]
         order = CONSTANT
         family = MONOMIAL
     []
@@ -52,11 +52,11 @@
         solution_uo = reader_object2
         variable = phiop0
     []
-    [ws]
+    [wc]
         type = SolutionIC
         from_variable = ws
         solution_uo = reader_object2
-        variable = ws0
+        variable = wc0
     []
     [wgcp]
         type = SolutionIC
@@ -99,9 +99,9 @@
     []
     [init_ws]
         type = ParsedMaterial
-        property_name = ws0
-        coupled_variables = 'ws0'
-        expression = 'ws0/1.0'
+        property_name = wc
+        coupled_variables = 'wc0'
+        expression = 'wc0/1.0'
     []
     [init_wgcp]
         type = ParsedMaterial

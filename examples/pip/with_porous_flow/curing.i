@@ -1,38 +1,4 @@
 ############### Calculations ################
-flux_in = 0.1 # volume fraction
-flux_out = 0.1
-
-# denisty # g cm-3
-rho_b = 2.00 # density at liquid state
-
-brooks_corey_threshold = 1e4 #Pa
-capillary_pressure_power = 3
-phi_L_residual = 0.0
-
-permeability_power = 3
-
-# liquid viscosity
-mu_b = 10
-
-# solid permeability
-kk_b = 2e-5
-
-# heat enthalpy [g-cm2/s2]
-hf = 1e7
-
-# thermal conductivity
-k_b = 2e3 #[gcm/s3/K]
-
-# heat capacity
-cp_b = 1e1 #g-cm2/s2/K
-
-# macroscopic property
-D_macro = 0.001 #cm2 s-1
-
-#boundary conditions
-htc = 2e1 #g / s3-K
-gravity = 980.665
-
 # Simulation parameters
 dt = 5
 
@@ -44,132 +10,47 @@ total_time = '${fparse theat + tcool*3600}'
 [GlobalParams]
     displacements = 'disp_x disp_y'
     temperature = 'T'
-    fluid_fraction = 'phif'
-    pressure = 'P'
 []
 
 [Variables]
-    [P]
-    []
-    [phif]
-    []
     [T]
     []
 []
 
 [Kernels]
-    ## Fluid flow ---------------------------------------------------------
-    [time]
-        type = PumaCoupledTimeDerivative
-        material_prop = M1
-        variable = phif
-        material_fluid_fraction_derivative = dM1dphif
-        material_pressure_derivative = dM1dP
-        material_temperature_derivative = dM1dT
-        material_deformation_gradient_derivative = dM1dF
-        stabilize_strain = true
-    []
-    [diffusion]
-        type = PumaCoupledDiffusion
-        material_prop = M2
-        variable = phif
-        material_fluid_fraction_derivative = dM2dphif
-        material_pressure_derivative = dM2dP
-        material_temperature_derivative = dM2dT
-        material_deformation_gradient_derivative = zeroR2
-        stabilize_strain = true
-    []
-    [darcy_nograv]
-        type = PumaCoupledDarcyFlow
-        coupled_variable = P
-        material_prop = M3
-        variable = phif
-        material_fluid_fraction_derivative = dM3dphif
-        material_pressure_derivative = dM3dP
-        material_temperature_derivative = dM3dT
-        material_deformation_gradient_derivative = zeroR2
-        stabilize_strain = true
-    []
-    [gravity]
-        type = CoupledAdditiveFlux
-        material_prop = M4
-        value = '0.0 ${gravity} 0.0'
-        variable = phif
-        material_fluid_fraction_derivative = dM4dphif
-        material_pressure_derivative = dM4dP
-        material_temperature_derivative = dM4dT
-        material_deformation_gradient_derivative = zeroR2
-        stabilize_strain = true
-    []
-    [L2]
-        type = CoupledL2Projection
-        material_prop = M5
-        variable = P
-        material_fluid_fraction_derivative = dM5dphif
-        material_pressure_derivative = dM5dP
-        material_temperature_derivative = dM5dT
-        material_deformation_gradient_derivative = dM5dF
-        stabilize_strain = true
-    []
     ## Temperature flow ---------------------------------------------------------
     [temp_time]
         type = PumaCoupledTimeDerivative
-        material_prop = M6
+        material_prop = M1
         variable = T
-        material_fluid_fraction_derivative = dM6dphif
-        material_pressure_derivative = dM6dP
-        material_temperature_derivative = dM6dT
+        material_temperature_derivative = dM1dT
         material_deformation_gradient_derivative = zeroR2
-        stabilize_strain = true
     []
     [temp_diffusion]
         type = PumaCoupledDiffusion
-        material_prop = M7
+        material_prop = M2
         variable = T
-        material_fluid_fraction_derivative = dM7dphif
-        material_pressure_derivative = dM7dP
-        material_temperature_derivative = dM7dT
+        material_temperature_derivative = dM2dT
         material_deformation_gradient_derivative = zeroR2
-        stabilize_strain = true
     []
-    [temp_darcy_nograv]
-        type = PumaCoupledDarcyFlow
-        coupled_variable = P
-        material_prop = M8
+    [reaction_heat]
+        type = CoupledMaterialSource
+        material_prop = M3
         variable = T
-        material_fluid_fraction_derivative = dM8dphif
-        material_pressure_derivative = dM8dP
-        material_temperature_derivative = dM8dT
+        material_temperature_derivative = dM3dT
         material_deformation_gradient_derivative = zeroR2
-        stabilize_strain = true
     []
-    [temp_gravity]
-        type = CoupledAdditiveFlux
-        material_prop = M9
-        value = '0.0 ${gravity} 0.0'
-        variable = T
-        material_fluid_fraction_derivative = dM9dphif
-        material_pressure_derivative = dM9dP
-        material_temperature_derivative = dM9dT
-        material_deformation_gradient_derivative = zeroR2
-        stabilize_strain = true
-    []
-    ##
     ## solid mechanics ---------------------------------------------------------
     [offDiagStressDiv_x]
         type = MomentumBalanceCoupledJacobian
         component = 0
         variable = disp_x
-        material_fluid_fraction_derivative = dpk1dphif
-        material_pressure_derivative = zeroR2
         material_temperature_derivative = dpk1dT
     []
     [offDiagStressDiv_y]
         type = MomentumBalanceCoupledJacobian
         component = 1
         variable = disp_y
-        material_fluid_fraction_derivative = dpk1dphif
-        material_pressure_derivative = zeroR2
         material_temperature_derivative = dpk1dT
     []
 []
@@ -192,60 +73,62 @@ total_time = '${fparse theat + tcool*3600}'
 []
 
 [NEML2]
-    input = 'neml2/infiltration.i'
-    cli_args = 'kk_L=${kk_b} permeability_power=${permeability_power} rhof_nu=${fparse rho_b/mu_b}
-              rhof2_nu=${fparse rho_b^2/mu_b} phif_residual=${phi_L_residual} rho_f=${fparse rho_b}
-              brooks_corey_threshold=${brooks_corey_threshold} capillary_pressure_power=${capillary_pressure_power}
-              nu=${nu} advs_coefficient=${advs_coefficient} hf_rhof_nu=${fparse hf*rho_b/mu_b}
-              hf_rhof2_nu=${fparse hf*rho_b^2/mu_b} therm_expansion=${therm_expansion} Tref=${T0}'
+    input = 'neml2/curing.i'
+    cli_args = 'rho_s=${rho_s} rho_b=${rho_b} rho_g=${rho_g} rho_p=${rho_p} Mref=${Mref}
+                rho_sm1M=${fparse Mref/rho_s} rho_bm1M=${fparse Mref/rho_b}
+                rho_gm1M=${fparse Mref/rho_g} rho_pm1M=${fparse Mref/rho_p}
+                cp_s=${cp_s} cp_b=${cp_b} cp_g=${cp_g} cp_p=${cp_p}
+                k_s=${k_s} k_b=${k_b} k_g=${k_g} k_p=${k_p}
+                Ea=${Ea} A=${A} R=${R} mY=${fparse -Y}
+                order=${order} source_coeff=${fparse -rho_s*hrp}
+                mu=${pyro_mu} mzeta=${fparse -zeta}
+                E=${E} g=${g} E=${E} Tref=${Tref}'
     [all]
         model = 'model'
         verbose = true
         device = 'cpu'
 
-        moose_input_types = 'VARIABLE    VARIABLE MATERIAL'
-        moose_inputs = '     phif        T        deformation_gradient'
-        neml2_inputs = '     forces/phif forces/T forces/F'
+        moose_input_types = 'VARIABLE     POSTPROCESSOR POSTPROCESSOR   MATERIAL        MATERIAL
+                             MATERIAL     MATERIAL      MATERIAL        MATERIAL        MATERIAL'
+        moose_inputs = '     T            time          time            alpha           alpha
+                             wb           ws            wgcp            phiop           deformation_gradient'
+        neml2_inputs = '     forces/T     forces/t      old_forces/t    old_state/alpha state/alpha
+                             old_state/wb old_state/ws  old_state/wgcp  old_state/phiop forces/F'
 
-        moose_parameter_types = 'MATERIAL       MATERIAL        MATERIAL        MATERIAL'
-        moose_parameters = '     void           wp              mwb0            o_Vref'
-        neml2_parameters = '     phif_max_param wp_state_param  binder_rate_c_0 Jvolume_c_0'
+        moose_parameter_types = 'MATERIAL        MATERIAL       MATERIAL        MATERIAL'
+        moose_parameters = '     wp              wc             mwb0            o_Vref'
+        neml2_parameters = '     wp_state_param  wc_state_param binder_rate_c_0 Jvolume_c_0'
 
-        moose_output_types = 'MATERIAL   MATERIAL MATERIAL MATERIAL MATERIAL
-                              MATERIAL MATERIAL MATERIAL   MATERIAL    MATERIAL'
-        moose_outputs = '     pk1_stress M1       M3       M4       M5
-                              M8       M9       poro       phis        perm'
-        neml2_outputs = '     state/pk1  state/M1 state/M3 state/M4 state/M5
-                              state/M8 state/M9 state/poro state/solid state/perm'
+        moose_output_types = 'MATERIAL        MATERIAL   MATERIAL   MATERIAL     MATERIAL
+                              MATERIAL        MATERIAL   MATERIAL   MATERIAL     MATERIAL
+                              MATERIAL        MATERIAL   MATERIAL   MATERIAL     MATERIAL
+                              MATERIAL        MATERIAL'
+        moose_outputs = '     phiop           wb         ws         wgcp         pk1_stress
+                              phib            phip       phis       phigcp       alpha
+                              M3              M2         M1         Jt           Jv
+                              V               phic'
+        neml2_outputs = '     state/phiop     state/wb   state/ws   state/wgcp   state/pk1
+                              state/phib      state/phip state/phis state/phigcp state/alpha
+                              state/M3        state/M2   state/M1   state/Jt     state/Jv
+                              state/V         state/phic'
 
-        moose_derivative_types = 'MATERIAL               MATERIAL             MATERIAL
-                                  MATERIAL               MATERIAL             MATERIAL
-                                  MATERIAL               MATERIAL'
-        moose_derivatives = '     dM5dphif               dM1dF                pk1_jacobian
-                                  dpk1dphif              dM5dF                dpk1dT
-                                  dM4dphif               dM9dphif'
-        neml2_derivatives = '     state/M5  forces/phif; state/M1 forces/F;   state/pk1 forces/F;
-                                  state/pk1 forces/phif; state/M5 forces/F;   state/pk1 forces/T;
-                                  state/M4  forces/phif; state/M9 forces/phif'
+        moose_derivative_types = 'MATERIAL            MATERIAL              MATERIAL
+                                  MATERIAL            MATERIAL'
+        moose_derivatives = '     dM3dT               dM1dT                 dM2dT
+                                  dpk1dT              pk1_jacobian'
+        neml2_derivatives = '     state/M3 forces/T;  state/M1 forces/T;    state/M2 forces/T;
+                                  state/pk1 forces/T; state/pk1 forces/F'
+
+        initialize_outputs = '      wb  wgcp  ws  alpha  phiop'
+        initialize_output_values = 'wb0 wgcp0 ws0 alpha0 phiop0'
     []
 []
 
 [Materials]
-    [constant]
+    [init_alpha]
         type = GenericConstantMaterial
-        prop_names = 'M2                        M6                     M7'
-        prop_values = '${fparse rho_b*D_macro} ${fparse rho_b*cp_b} ${fparse k_b}'
-    []
-    [constant_derivative]
-        type = GenericConstantMaterial
-        prop_names = ' dM1dP    dM1dphif dM1dT dM2dphif dM2dP dM2dT
-                       dM3dphif dM3dP    dM3dT dM4dP    dM4dT dM5dP dM5dT
-                       dM6dP    dM6dphif dM6dT dM7dphif dM7dP dM7dT
-                       dM8dphif dM8dP    dM8dT dM9dP    dM9dT'
-        prop_values = '0.0      0.0      0.0   0.0      0.0   0.0
-                       0.0      0.0      0.0   0.0      0.0   0.0   0.0
-                       0.0      0.0      0.0   0.0      0.0   0.0
-                       0.0      0.0      0.0   0.0      0.0'
+        prop_names = 'alpha0 phiop0 ws0'
+        prop_values = '0.0 0.0 0.0'
     []
     [zeroR2]
         type = GenericConstantRankTwoTensor
@@ -274,39 +157,12 @@ total_time = '${fparse theat + tcool*3600}'
 [VectorPostprocessors]
     [composition_info]
         type = ElementMaterialSampler
-        property = 'phiop phigcp phis phip phib ws wp wb wgcp max_principal_pk1_stress'
+        property = 'phiop phigcp phis phip phib phic ws wp wb wgcp max_principal_pk1_stress wc'
         execute_on = 'FINAL'
     []
 []
 
 [AuxVariables]
-    [init_void]
-        order = CONSTANT
-        family = MONOMIAL
-        [AuxKernel]
-            type = MaterialRealAux
-            property = void
-            execute_on = 'INITIAL TIMESTEP_END'
-        []
-    []
-    [porosity]
-        order = CONSTANT
-        family = MONOMIAL
-        [AuxKernel]
-            type = MaterialRealAux
-            property = poro
-            execute_on = 'INITIAL TIMESTEP_END'
-        []
-    []
-    [permeability]
-        order = CONSTANT
-        family = MONOMIAL
-        [AuxKernel]
-            type = MaterialRealAux
-            property = perm
-            execute_on = 'INITIAL TIMESTEP_END'
-        []
-    []
     [phib]
         order = CONSTANT
         family = MONOMIAL
@@ -352,6 +208,15 @@ total_time = '${fparse theat + tcool*3600}'
             execute_on = 'INITIAL TIMESTEP_END'
         []
     []
+    [phic]
+        order = CONSTANT
+        family = MONOMIAL
+        [AuxKernel]
+            type = MaterialRealAux
+            property = phic
+            execute_on = 'INITIAL TIMESTEP_END'
+        []
+    []
     [wb]
         order = CONSTANT
         family = MONOMIAL
@@ -385,6 +250,15 @@ total_time = '${fparse theat + tcool*3600}'
         [AuxKernel]
             type = MaterialRealAux
             property = wgcp
+            execute_on = 'INITIAL TIMESTEP_END'
+        []
+    []
+    [wc]
+        order = CONSTANT
+        family = MONOMIAL
+        [AuxKernel]
+            type = MaterialRealAux
+            property = wc
             execute_on = 'INITIAL TIMESTEP_END'
         []
     []
@@ -478,17 +352,6 @@ total_time = '${fparse theat + tcool*3600}'
         boundary = 'fix'
         value = 0.0
         variable = disp_y
-    []
-    [inlet]
-        type = InfiltrationWake
-        boundary = 'open'
-        inlet_flux = flux_in
-        outlet_flux = flux_out
-        product_fraction = 0.0
-        product_fraction_derivative = 0.0
-        solid_fraction = phi_solid
-        solid_fraction_derivative = 0.0
-        variable = phif
     []
 []
 
