@@ -2,16 +2,15 @@
 #include "Moose.h"
 #include "AppFactory.h"
 #include "ModulesApp.h"
-#include "MooseSyntax.h"
 
 InputParameters
 PumaApp::validParams()
 {
-  InputParameters params = SolidMechanicsApp::validParams();
+  InputParameters params = MooseApp::validParams();
   return params;
 }
 
-PumaApp::PumaApp(InputParameters parameters) : SolidMechanicsApp(parameters)
+PumaApp::PumaApp(InputParameters parameters) : MooseApp(parameters)
 {
   PumaApp::registerAll(_factory, _action_factory, _syntax);
 }

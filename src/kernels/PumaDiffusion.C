@@ -1,6 +1,3 @@
-// Copyright 2023, UChicago Argonne, LLC All Rights Reserved
-// License: L-GPL 3.0
-
 #include "PumaDiffusion.h"
 
 registerMooseObject("PumaApp", PumaDiffusion);

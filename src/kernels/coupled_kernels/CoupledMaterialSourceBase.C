@@ -1,7 +1,5 @@
-// Copyright 2023, UChicago Argonne, LLC All Rights Reserved
-// License: L-GPL 3.0
-
 #include "CoupledMaterialSourceBase.h"
+#include "CoordSysInstantiation.h"
 
 template <typename G>
 InputParameters
@@ -71,7 +69,20 @@ CoupledMaterialSourceBase<G>::computeQpOffDiagJacobian(unsigned int jvar)
   return 0.0;
 }
 
-// Explicit instantiations
-template class CoupledMaterialSourceBase<GradientOperatorCartesian>;
-template class CoupledMaterialSourceBase<GradientOperatorAxisymmetricCylindrical>;
-template class CoupledMaterialSourceBase<GradientOperatorCentrosymmetricSpherical>;
+INSTANTIATE_PUMA_KERNEL(CoupledMaterialSource,
+                        CoupledMaterialSourceBase,
+                        GradientOperatorCartesian,
+                        Moose::COORD_XYZ,
+                        "Cartesian");
+
+INSTANTIATE_PUMA_KERNEL(CoupledMaterialSourceAxisymmetricCylindrical,
+                        CoupledMaterialSourceBase,
+                        GradientOperatorAxisymmetricCylindrical,
+                        Moose::COORD_RZ,
+                        "Cylindrical");
+
+INSTANTIATE_PUMA_KERNEL(CoupledMaterialSourceCentrosymmetricSpherical,
+                        CoupledMaterialSourceBase,
+                        GradientOperatorCentrosymmetricSpherical,
+                        Moose::COORD_RSPHERICAL,
+                        "Spherical");
