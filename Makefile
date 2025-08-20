@@ -63,3 +63,8 @@ include            $(FRAMEWORK_DIR)/app.mk
 
 ###############################################################################
 # Additional special case targets should be added here
+
+dep_check: | prebuild
+ifneq ($(ENABLE_NEML2),true)
+  $(error PUMA requires MOOSE to be configured with NEML2. Please follow instructions at https://mooseframework.inl.gov/getting_started/installation/install_neml2.html.)
+endif

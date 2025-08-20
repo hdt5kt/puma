@@ -1,22 +1,10 @@
-//* This file is part of the MOOSE framework
-//* https://www.mooseframework.org
-//*
-//* All rights reserved, see COPYRIGHT for full restrictions
-//* https://github.com/idaholab/moose/blob/master/COPYRIGHT
-//*
-//* Licensed under LGPL 2.1, please see LICENSE for details
-//* https://www.gnu.org/licenses/lgpl-2.1.html
-
 #include "MomentumBalanceCoupledJacobian.h"
 
 // MOOSE includes
 #include "Assembly.h"
 #include "MooseVariableFE.h"
-#include "RankTwoTensor.h"
 
-#include "libmesh/quadrature.h"
-
-registerMooseObject("MooseApp", MomentumBalanceCoupledJacobian);
+registerMooseObject("PumaApp", MomentumBalanceCoupledJacobian);
 
 InputParameters
 MomentumBalanceCoupledJacobian::validParams()
@@ -121,6 +109,5 @@ MomentumBalanceCoupledJacobian::computeQpOffDiagJacobian(unsigned int jvar)
 RankTwoTensor
 MomentumBalanceCoupledJacobian::gradTest(unsigned int component)
 {
-  return GradientOperatorCartesian::gradOp(
-      component, _grad_test[_i][_qp], _test[_i][_qp], _q_point[_qp]);
+  return gradOp(component, _grad_test[_i][_qp], _test[_i][_qp], _q_point[_qp]);
 }

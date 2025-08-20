@@ -1,23 +1,12 @@
-//* This file is part of the MOOSE framework
-//* https://mooseframework.inl.gov
-//*
-//* All rights reserved, see COPYRIGHT for full restrictions
-//* https://github.com/idaholab/moose/blob/master/COPYRIGHT
-//*
-//* Licensed under LGPL 2.1, please see LICENSE for details
-//* https://www.gnu.org/licenses/lgpl-2.1.html
-
 #pragma once
 
 // MOOSE includes
-#include "Assembly.h"
-#include "MooseVariableFE.h"
-#include "RankTwoTensor.h"
+#include "MathUtils.h"
+#include "MooseArray.h"
 #include "StabilizationUtils.h"
-#include "GradientOperator.h"
-#include "FEProblem.h"
-
-#include "libmesh/quadrature.h"
+#include "InputParameters.h"
+#include "RankTwoTensor.h"
+#include "FEProblemBase.h"
 
 /**
  * Interface class to provide common input parameters, members, and methods for the Puma Coupled.
@@ -114,7 +103,7 @@ PumaCoupledKernelInterface<T, G>::PumaCoupledKernelInterface(const InputParamete
 {
   if (this->isCoupled("temperature"))
   {
-    if (!this->template isParamValid("material_temperature_derivative"))
+    if (!this->isParamValid("material_temperature_derivative"))
       this->paramError(
           "material_temperature_derivative",
           "If temperature is coupled, material_temperature_derivative must be provided.");
@@ -126,7 +115,7 @@ PumaCoupledKernelInterface<T, G>::PumaCoupledKernelInterface(const InputParamete
 
   if (this->isCoupled("pressure"))
   {
-    if (!this->template isParamValid("material_pressure_derivative"))
+    if (!this->isParamValid("material_pressure_derivative"))
       this->paramError("material_pressure_derivative",
                        "If pressure is coupled, material_pressure_derivative must be provided.");
     _P_id = this->coupled("pressure");
@@ -136,7 +125,7 @@ PumaCoupledKernelInterface<T, G>::PumaCoupledKernelInterface(const InputParamete
 
   if (this->isCoupled("fluid_fraction"))
   {
-    if (!this->template isParamValid("material_fluid_fraction_derivative"))
+    if (!this->isParamValid("material_fluid_fraction_derivative"))
       this->paramError(
           "material_fluid_fraction_derivative",
           "If fluid_fraction is coupled, material_fluid_fraction_derivative must be provided.");
@@ -148,7 +137,7 @@ PumaCoupledKernelInterface<T, G>::PumaCoupledKernelInterface(const InputParamete
   if (this->isCoupled("displacements"))
   {
     _ndisp = this->coupledComponents("displacements");
-    if (!this->template isParamValid("material_deformation_gradient_derivative"))
+    if (!this->isParamValid("material_deformation_gradient_derivative"))
       this->paramError("material_deformation_gradient_derivative",
                        "If displacements are coupled, material_deformation_gradient_derivative "
                        "must be provided.");

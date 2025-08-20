@@ -1,6 +1,3 @@
-// Copyright 2023, UChicago Argonne, LLC All Rights Reserved
-// License: L-GPL 3.0
-
 #include "InfiltrationWake.h"
 #include "Function.h"
 
@@ -105,8 +102,6 @@ InfiltrationWake::computeQpResidual()
   const auto a = _inlet_flux.value(_t, _q_point[_qp]);
   const auto b = _outlet_flux.value(_t, _q_point[_qp]);
   const auto scale = (-heaviside(x - 1, _sharpness) * (a + b) + a) * hermite(cap, _transistion);
-
-  // std::cout << "scale: " << scale << std::endl;
 
   const auto r = -_test[_i][_qp] * scale;
   return _M ? std::max((*_M)[_qp] - _M0, 0.0) * r : r;

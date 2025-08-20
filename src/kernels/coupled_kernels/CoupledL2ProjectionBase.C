@@ -1,6 +1,5 @@
-// Copyright 2023, UChicago Argonne, LLC All Rights Reserved
-// License: L-GPL 3.0
 #include "CoupledL2ProjectionBase.h"
+#include "CoordSysInstantiation.h"
 
 template <typename G>
 InputParameters
@@ -71,7 +70,20 @@ CoupledL2ProjectionBase<G>::computeQpOffDiagJacobian(unsigned int jvar)
   return 0.0;
 }
 
-// Explicit instantiations
-template class CoupledL2ProjectionBase<GradientOperatorCartesian>;
-template class CoupledL2ProjectionBase<GradientOperatorAxisymmetricCylindrical>;
-template class CoupledL2ProjectionBase<GradientOperatorCentrosymmetricSpherical>;
+INSTANTIATE_PUMA_KERNEL(CoupledL2Projection,
+                        CoupledL2ProjectionBase,
+                        GradientOperatorCartesian,
+                        Moose::COORD_XYZ,
+                        "Cartesian");
+
+INSTANTIATE_PUMA_KERNEL(CoupledL2ProjectionAxisymmetricCylindrical,
+                        CoupledL2ProjectionBase,
+                        GradientOperatorAxisymmetricCylindrical,
+                        Moose::COORD_RZ,
+                        "Cylindrical");
+
+INSTANTIATE_PUMA_KERNEL(CoupledL2ProjectionCentrosymmetricSpherical,
+                        CoupledL2ProjectionBase,
+                        GradientOperatorCentrosymmetricSpherical,
+                        Moose::COORD_RSPHERICAL,
+                        "Spherical");

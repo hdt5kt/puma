@@ -1,4 +1,5 @@
 #include "PumaCoupledTimeDerivativeBase.h"
+#include "CoordSysInstantiation.h"
 
 template <class G>
 InputParameters
@@ -71,6 +72,20 @@ PumaCoupledTimeDerivativeBase<G>::computeQpOffDiagJacobian(unsigned int jvar)
   return 0.0;
 }
 
-template class PumaCoupledTimeDerivativeBase<GradientOperatorCartesian>;
-template class PumaCoupledTimeDerivativeBase<GradientOperatorAxisymmetricCylindrical>;
-template class PumaCoupledTimeDerivativeBase<GradientOperatorCentrosymmetricSpherical>;
+INSTANTIATE_PUMA_KERNEL(PumaCoupledTimeDerivative,
+                        PumaCoupledTimeDerivativeBase,
+                        GradientOperatorCartesian,
+                        Moose::COORD_XYZ,
+                        "Cartesian");
+
+INSTANTIATE_PUMA_KERNEL(PumaCoupledTimeDerivativeAxisymmetricCylindrical,
+                        PumaCoupledTimeDerivativeBase,
+                        GradientOperatorAxisymmetricCylindrical,
+                        Moose::COORD_RZ,
+                        "Cylindrical");
+
+INSTANTIATE_PUMA_KERNEL(PumaCoupledTimeDerivativeCentrosymmetricSpherical,
+                        PumaCoupledTimeDerivativeBase,
+                        GradientOperatorCentrosymmetricSpherical,
+                        Moose::COORD_RSPHERICAL,
+                        "Spherical");

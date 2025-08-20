@@ -1,4 +1,5 @@
 #include "PumaCoupledDiffusionBase.h"
+#include "CoordSysInstantiation.h"
 
 template <class G>
 InputParameters
@@ -71,7 +72,20 @@ PumaCoupledDiffusionBase<G>::computeQpOffDiagJacobian(unsigned int jvar)
   return 0.0;
 }
 
-// Explicit template instantiations
-template class PumaCoupledDiffusionBase<GradientOperatorCartesian>;
-template class PumaCoupledDiffusionBase<GradientOperatorAxisymmetricCylindrical>;
-template class PumaCoupledDiffusionBase<GradientOperatorCentrosymmetricSpherical>;
+INSTANTIATE_PUMA_KERNEL(PumaCoupledDiffusion,
+                        PumaCoupledDiffusionBase,
+                        GradientOperatorCartesian,
+                        Moose::COORD_XYZ,
+                        "Cartesian");
+
+INSTANTIATE_PUMA_KERNEL(PumaCoupledDiffusionAxisymmetricCylindrical,
+                        PumaCoupledDiffusionBase,
+                        GradientOperatorAxisymmetricCylindrical,
+                        Moose::COORD_RZ,
+                        "Cylindrical");
+
+INSTANTIATE_PUMA_KERNEL(PumaCoupledDiffusionCentrosymmetricSpherical,
+                        PumaCoupledDiffusionBase,
+                        GradientOperatorCentrosymmetricSpherical,
+                        Moose::COORD_RSPHERICAL,
+                        "Spherical");
