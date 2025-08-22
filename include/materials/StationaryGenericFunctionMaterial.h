@@ -1,3 +1,9 @@
+//* This file is part of PUMA
+//* https://github.com/applied-material-modeling/puma
+//*
+//* Licensed under the MIT license, please see LICENSE for details
+//* https://opensource.org/license/MIT
+
 #include "GenericFunctionMaterial.h"
 
 class StationaryGenericFunctionMaterial : public GenericFunctionMaterial

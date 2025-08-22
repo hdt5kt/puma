@@ -1,11 +1,8 @@
-//* This file is part of the MOOSE framework
-//* https://www.mooseframework.org
+//* This file is part of PUMA
+//* https://github.com/applied-material-modeling/puma
 //*
-//* All rights reserved, see COPYRIGHT for full restrictions
-//* https://github.com/idaholab/moose/blob/master/COPYRIGHT
-//*
-//* Licensed under LGPL 2.1, please see LICENSE for details
-//* https://www.gnu.org/licenses/lgpl-2.1.html
+//* Licensed under the MIT license, please see LICENSE for details
+//* https://opensource.org/license/MIT
 
 #include "PumaTestApp.h"
 #include "MooseMain.h"
