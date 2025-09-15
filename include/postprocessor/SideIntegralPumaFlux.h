@@ -24,7 +24,7 @@ protected:
   const VariableValue & _u;
   /// Holds the solution gradient at the current quadrature points
   const VariableGradient & _grad_u;
-  P
-      /// Material property M
-      const MaterialProperty<Real> & _M;
+
+  /// Material property M
+  const MaterialProperty<Real> & _M;
 };
