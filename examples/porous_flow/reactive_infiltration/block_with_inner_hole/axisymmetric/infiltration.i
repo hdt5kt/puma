@@ -2,11 +2,11 @@
 
 # Simulation parameters
 dt = 5 #s
-total_time = 3600 #s
+total_time = 3000 #s
 
 flux_in = 0.1 # volume fraction
-flux_out = 0.1
-t_ramp = 1000
+flux_out = 0.5
+t_ramp = 500
 
 # Molar Mass # g mol-1
 M_Si = 28.085
@@ -19,37 +19,40 @@ rho_SiC = 3.21
 rho_C = 2.26
 
 # material property
-D_LP = 2.65e-6 # cm2 s-1
-l_c = 1.0 # cm
+D_LP = 1.95e-12 # cm2 s-1
+l_c = 0.0002 # cm
+chem_p = 250
+chem_scale = 700
 
-brooks_corey_threshold = 1e6 #Pa
-capillary_pressure_power = 10
+brooks_corey_threshold = 5e6 #Pa
+capillary_pressure_power = 20
 phi_L_residual = 0.0
 
-permeability_power = 10
+permeability_power = 11
 
 # liquid viscosity
-mu_Si = 10
+mu_Si = 20
 
 # solid reference permeability
-kk_ref = 2e-5
+kk_ref = 5e-6
 
 # chemical reaction constant
 k_C = 1.0
 k_SiC = 1.0
 
 # macroscopic property
-D_macro = 0.0001 #cm2 s-1
+D_macro = 0.00002 #cm2 s-1
 
 # initial condition
-phi0_SiC = 0.001
-phi0_C = 0.7
+phi0_SiC = 0.0
+phi0_C = 0.85
 
 gravity = 980.665
 
 # pool information
-h0_pool = 1.4
+h0_pool = 1.42
 levelset_smooth_transistion = 0.2
+apparent_density = 0.255925301 # g cm-3
 
 ## Calculations
 D_bar = '${fparse D_LP/(l_c^2)}'
@@ -62,6 +65,8 @@ oCm1 = '${fparse 1/omega_C}'
 oSiCm1 = '${fparse 1/omega_SiC}'
 
 chem_ratio = '${fparse k_SiC/k_C}'
+
+scale_flux = '${fparse rho_Si/apparent_density}'
 
 [GlobalParams]
     pressure = P
@@ -228,7 +233,9 @@ chem_ratio = '${fparse k_SiC/k_C}'
               chem_ratio=${chem_ratio} mchem_P=${fparse -k_SiC}
               brooks_corey_threshold=${brooks_corey_threshold}
               capillary_pressure_power=${capillary_pressure_power}
-              D_macro=${D_macro}'
+              D_macro=${D_macro} oP_oL=${fparse omega_SiC/omega_Si}
+              chem_scale=${fparse chem_scale/omega_Si} chem_p=${chem_p}
+              scale_flux=${scale_flux}'
     [all]
         model = 'model'
         verbose = true
@@ -263,8 +270,8 @@ chem_ratio = '${fparse k_SiC/k_C}'
 [Materials]
     [constant]
         type = GenericConstantMaterial
-        prop_names = 'M1                M2'
-        prop_values = '${fparse rho_Si} ${fparse rho_Si*D_macro}'
+        prop_names = 'M1                M2                       M2mod'
+        prop_values = '${fparse rho_Si} ${fparse rho_Si*D_macro} ${fparse rho_Si*D_macro*scale_flux}'
     []
     [constant_derivative]
         type = GenericConstantMaterial
@@ -288,11 +295,29 @@ chem_ratio = '${fparse k_SiC/k_C}'
         type = TimePostprocessor
         execute_on = 'INITIAL TIMESTEP_BEGIN'
     []
-    [volume_rate]
-        type = SideDiffusiveFluxIntegral
-        diffusivity = Dtotal
-        variable = phif
+    [volume_rate1]
+        # type = SideDiffusiveFluxIntegral
+        # diffusivity = Dtotal
+        # variable = phif
+        # boundary = 'interface'
+        # execute_on = 'TIMESTEP_END'
+        type = SideIntegralPumaFlux
         boundary = 'interface'
+        material_property = M2mod
+        variable = phif
+        execute_on = 'TIMESTEP_END'
+    []
+    [volume_rate2]
+        type = SideIntegralPumaFlux
+        boundary = 'interface'
+        material_property = Dtotal
+        variable = P
+        execute_on = 'TIMESTEP_END'
+    []
+    [volume_rate]
+        type = LinearCombinationPostprocessor
+        pp_coefs = '1.0 1.0'
+        pp_names = 'volume_rate1 volume_rate2'
         execute_on = 'TIMESTEP_END'
     []
 []
@@ -333,7 +358,8 @@ chem_ratio = '${fparse k_SiC/k_C}'
         product_fraction_derivative = dphipdphif
         solid_fraction = phis
         solid_fraction_derivative = dphisdphif
-        no_flux_fraction_transition = 0.1
+        no_flux_fraction_transition = 0.005
+        sharpness = 10
         multiplier = M
     []
 []
@@ -341,8 +367,12 @@ chem_ratio = '${fparse k_SiC/k_C}'
 [Executioner]
     type = Transient
     solve_type = 'newton'
+    petsc_options = '-ksp_converged_reason'
+
     petsc_options_iname = '-pc_type' #-snes_type'
     petsc_options_value = 'lu' # vinewtonrsls'
+    #reuse_preconditioner = true
+    #residual_and_jacobian_together = 'true'
     automatic_scaling = true
 
     line_search = none
